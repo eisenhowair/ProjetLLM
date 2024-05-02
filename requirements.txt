@@ -1,0 +1,8 @@
+transformers
+torch
+langchain
+chainlit
+accelerate
+elasticsearch
+openai
+sentence-transformers
