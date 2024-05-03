@@ -6,3 +6,8 @@ accelerate
 elasticsearch
 openai
 sentence-transformers
+llama-index 
+llama-index-embeddings-ollama
+llama-index-llms-ollama
+llama-index-vector-stores-elasticsearch
+python-dotenv
