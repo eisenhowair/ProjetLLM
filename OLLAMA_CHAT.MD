@@ -1,6 +1,6 @@
 ## Procédure de lancement
 
-- lancer curl -fsSL https://ollama.com/install.sh | sh
+- lancer curl -fsSL https://ollama.com/install.sh | sh pour installer ollama
 - puis ollama run llama3:8b pour installer le modèle
 - http://localhost:11434/ permet de vérifier le lancement du server
 
