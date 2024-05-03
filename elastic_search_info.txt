@@ -1,0 +1,7 @@
+{
+  "id": "ChH8NI8B7Kns4WBO98aZ",
+  "name": "elasticsearch-key",
+  "api_key": "l6n4LTZYTSm7BRv-W4VXxw",
+  "encoded": "Q2hIOE5JOEI3S25zNFdCTzk4YVo6bDZuNExUWllUU203QlJ2LVc0Vlh4dw==",
+  "beats_logstash_format": "ChH8NI8B7Kns4WBO98aZ:l6n4LTZYTSm7BRv-W4VXxw"
+}
