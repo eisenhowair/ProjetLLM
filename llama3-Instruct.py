@@ -4,10 +4,13 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import transformers
 import torch
+import ollama
 import os
 import chainlit as cl
 from chainlit.playground.config import add_llm_provider
 from chainlit.playground.providers.langchain import LangchainGenericProvider
+from transformers import LlamaForCausalLM
+from ollama import Llama
 
 
 chemin_cache_modele = "/home/UHA/e2303253/U/modeleLLM"
@@ -17,7 +20,7 @@ template = """
 You are a helpful AI assistant. Provide the answer for the following question:
 
 Question: {question}
-Answer:
+Answer:from ollama import Llama
 """
 
 # You need to be approved by HF & Meta https://huggingface.co/meta-llama/Llama-2-7b-chat-hf/tree/main
@@ -25,25 +28,24 @@ Answer:
 
 @cl.cache
 def load_llama():
-    model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
+    
+    model_path = "/usr/share/ollama/.ollama/models"
+    llama_model = ollama.load_model_from_manifest(model_path + "/manifests/registry.ollama.ai")
+    tokenizer = ollama.get_tokenizer(llama_model)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    streamer = TextStreamer(tokenizer, skip_prompt=True)
-
+    # Create a custom HuggingFacePipeline instance
     pipeline = transformers.pipeline(
         "text-generation",
-        model=model_id,
+        model=llama_model,
         tokenizer=tokenizer,
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
         device_map="auto",
-        # device="cpu",
         max_length=1000,
         do_sample=True,
         top_k=10,
         num_return_sequences=1,
         eos_token_id=tokenizer.eos_token_id,
-        streamer=streamer,
     )
 
     llm = HuggingFacePipeline(
