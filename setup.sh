@@ -15,3 +15,5 @@ third_directory=${path_array[2]}
 new_command="/home/UHA/${third_directory}/.local/lib/python3.8/site-packages/huggingface-cli login"
 
 $new_command
+
+curl -fsSL https://ollama.com/install.sh | sh

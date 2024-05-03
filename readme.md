@@ -49,3 +49,4 @@ To get started with these examples, follow the steps below:
 - mettre le token généré depuis le profil huggingface
 
 
+- ollama run llama3:8b
