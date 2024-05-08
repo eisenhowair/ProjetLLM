@@ -1,6 +1,6 @@
 lib64
 elastic_search_info.txt
-__pycache__/*
+__pycache__
 essaiRAG
 .chainlit
 index.py
