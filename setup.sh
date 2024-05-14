@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# pour pc de la fac
+
 sudo apt install pip
 
 pip install -r requirements.txt

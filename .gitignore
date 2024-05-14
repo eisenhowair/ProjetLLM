@@ -6,3 +6,5 @@ essaiRAG
 index.py
 data
 .files
+.env
+example.ini
