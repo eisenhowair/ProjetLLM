@@ -1,0 +1,13 @@
+transformers
+torch
+langchain
+chainlit
+accelerate
+openai
+sentence-transformers
+llama-index 
+llama-index-embeddings-ollama
+llama-index-llms-ollama
+python-dotenv
+PyPDF2
+faiss-cpu
