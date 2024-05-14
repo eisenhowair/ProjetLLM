@@ -3,11 +3,8 @@ torch
 langchain
 chainlit
 accelerate
+elasticsearch
 openai
 sentence-transformers
-llama-index 
-llama-index-embeddings-ollama
-llama-index-llms-ollama
-python-dotenv
 PyPDF2
 faiss-cpu

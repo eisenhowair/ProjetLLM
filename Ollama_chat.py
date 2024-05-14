@@ -9,9 +9,7 @@ import chainlit as cl
 
 @cl.on_chat_start
 async def on_chat_start():
-    model = Ollama(   
-        base_url='http://localhost:11434',
-        model="llama3:8b")
+    model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
     prompt = ChatPromptTemplate.from_messages(
         [
             (

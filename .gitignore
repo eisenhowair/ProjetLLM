@@ -1,3 +1,8 @@
 lib64
-
-__pycache__/*
+elastic_search_info.txt
+__pycache__
+essaiRAG
+.chainlit
+index.py
+data
+.files
