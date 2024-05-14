@@ -1,21 +1,37 @@
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.llms import Ollama
 from langchain_community.vectorstores import FAISS
-from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from PyPDF2 import PdfReader
 from typing import List
 import chainlit as cl
 from langchain.schema.runnable.config import RunnableConfig
+from langchain_core.runnables import RunnablePassthrough
+import os
+from langchain.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    CharacterTextSplitter,
+)
+from langchain_community.embeddings import HuggingFaceEmbeddings, OllamaEmbeddings
+from langchain.chains import RetrievalQA
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from llama_index.embeddings.ollama import OllamaEmbedding
 
 # Configuration
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 index_path = "data/vectorstore/temp-index.faiss"
 
+# Ensure the directory exists
+os.makedirs(os.path.dirname(index_path), exist_ok=True)
+
 # Initialize embeddings
-embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
+embeddings = HuggingFaceEmbeddings(
+    model_name=embedding_model,
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": False},
+)
 model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
 prompt = PromptTemplate(
     template="""You are a helpful AI assistant named SAHAYAK. Answer the question based on the context.
@@ -48,15 +64,17 @@ def update_faiss_index(faiss_index: FAISS, documents: List[str]):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
     new_docs = text_splitter.create_documents(documents)
     faiss_index.add_documents(new_docs)
-    faiss_index.save_local(index_path)
+    faiss_index.save_local(index_path, index_name="tryoutIndex")
 
 
 def get_faiss_index(documents: List[str] = None) -> FAISS:
     global faiss_index
     if faiss_index is None:
-        if os.path.exists(index_path):
+        if os.path.exists(os.path.join(index_path, "tryoutIndex.faiss")):
             print("Loading existing index...")
-            faiss_index = FAISS.load_local(index_path, embeddings)
+            faiss_index = FAISS.load_local(
+                index_path, embeddings, index_name="tryoutIndex"
+            )
             if documents:
                 update_faiss_index(faiss_index, documents)
         else:
@@ -68,11 +86,24 @@ def get_faiss_index(documents: List[str] = None) -> FAISS:
             )
             docs = text_splitter.create_documents(documents)
             faiss_index = FAISS.from_documents(docs, embeddings)
-            faiss_index.save_local(index_path)
+            faiss_index.save_local(index_path, index_name="tryoutIndex")
     elif documents:
         print("Updating index with new documents...")
         update_faiss_index(faiss_index, documents)
     return faiss_index
+
+
+def search_and_answer(question: str, retriever: FAISS, prompt: PromptTemplate) -> str:
+    # Effectuer la recherche
+    search_docs = retriever.similarity_search(question)
+
+    # Préparer le contexte pour le prompt
+    context = "\n\n".join([doc.page_content for doc in search_docs])
+
+    # Générer la réponse
+    formatted_prompt = prompt.format(context=context, question=question)
+    answer = model(formatted_prompt)
+    return answer
 
 
 @cl.on_chat_start
@@ -102,16 +133,17 @@ async def factory():
     # Load or update the FAISS index
     faiss_index = get_faiss_index([file_text])
 
-    # Set up the QA chain
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=model,
-        chain_type="stuff",
-        retriever=faiss_index.as_retriever(),
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": prompt},
-    )
-
-    cl.user_session.set("chain", qa_chain)
+    question = input("Enter your query:")
+    rag_data = {"context": faiss_index.similarity_search, "question": question}
+    rag_chain = RunnablePassthrough() | prompt | model | StrOutputParser()
+    print("Answer:", rag_chain.invoke(rag_data))
+    """
+    searchDocs = faiss_index.similarity_search(question)
+    for doc in searchDocs:
+        print("similarity_search:", doc.page_content)
+    """
+    # Set la chaîne de recherche dans la session utilisateur
+    cl.user_session.set("retriever", faiss_index)
 
     msg = cl.Message(content="The bot is initialized. Ask your questions!")
     await msg.send()
@@ -119,11 +151,29 @@ async def factory():
 
 @cl.on_message
 async def main(message):
-    chain = cl.user_session.get("chain")
-    msg = cl.Message(content="")
-    async for chunk in chain.astream(
-        {"query": message.content},
-        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
-    ):
-        await msg.stream_token(chunk["result"])
-    await msg.send()
+    retriever = cl.user_session.get("retriever")
+    if retriever is None:
+        await cl.Message(
+            content="Error: No retriever found. Please restart the chat."
+        ).send()
+        return
+
+    question = (
+        message.content
+    )  # Récupérer la question de l'utilisateur depuis le message Chainlit
+
+    search_docs = retriever.similarity_search(
+        question
+    )  # Effectuer la recherche de similarité avec la question
+
+    context = "\n\n".join(
+        [doc.page_content for doc in search_docs]
+    )  # Préparer le contexte pour le prompt
+
+    formatted_prompt = prompt.format(
+        context=context, question=question
+    )  # Formater le prompt avec le contexte et la question
+
+    answer = model(formatted_prompt)  # Générer la réponse complète
+
+    await cl.Message(content=answer).send()  # Envoyer la réponse à l'utilisateur

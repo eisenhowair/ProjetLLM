@@ -1,0 +1,10 @@
+transformers
+torch
+langchain
+chainlit
+accelerate
+elasticsearch
+openai
+sentence-transformers
+PyPDF2
+faiss-cpu
