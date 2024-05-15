@@ -1,6 +1,6 @@
 transformers
 torch
-langchain
+langchain==0.1.20
 chainlit
 accelerate
 openai
