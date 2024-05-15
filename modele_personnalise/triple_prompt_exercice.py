@@ -115,7 +115,7 @@ async def on_message(message: cl.Message):
             setup_exercice_model()
             runnable = cl.user_session.get("runnable")
 
-            msg = cl.Message(content="")
+            msg = cl.Message(content="",author="Générateur")
             async for chunk in runnable.astream(
                 {"question": message.content},
                 config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
@@ -130,11 +130,11 @@ async def on_message(message: cl.Message):
             print("partie correction d'exercice")
             runnable = cl.user_session.get("runnable")  # type: Runnable
 
-            msg = cl.Message(content="")
+            msg = cl.Message(content="",author="Correcteur")
             async for chunk in runnable.astream(
                 {"question": message.content},
                 config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
             ):
                 await msg.stream_token(chunk)
-                
+
             await msg.send()
