@@ -3,11 +3,10 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable, RunnablePassthrough
 from langchain.schema.runnable.config import RunnableConfig
-
+from Exercice import Exercice
 import chainlit as cl
 
 model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
-a_corriger = True
 
 @cl.on_chat_start
 async def on_chat_start():
@@ -53,9 +52,7 @@ def setup_exercice_model():
         (
             "system",
             "Tu parles uniquement français. Ton rôle est de créer des exercices de mathématiques niveau "+niveau_scolaire+" \
-            en te basant sur les intérêts suivants : " + loisirs + ". \
-            Lorsque l'utilisateur répond à ton exercice, tu le félicites s'il s'agit de la bonne réponse, \
-            ou le corrige s'il a dit la mauvaise réponse à ton exercice"
+            en te basant sur les intérêts suivants : " + loisirs
         ),
         ("human", "{question}")
         ]
@@ -65,15 +62,15 @@ def setup_exercice_model():
     runnable_exercice = prompt_exercice | model | StrOutputParser()
     cl.user_session.set("runnable", runnable_exercice)
 
-def setup_corrige_model(dernier_exo,reponse_user):
+def setup_corrige_model():
     """
     Configure le prompt et le Runnable pour corriger des exercices de mathématiques en paramètre.
 
     Args:
         dernier_exo (str): Une chaîne représentant le dernier exercice généré.
-        reponse_user (str): Une chaîne pour la réponse soumise par l'utilisateur
     """
 
+    dernier_exo = cl.user_session.get("dernier_exo")
     prompt_corrige = ChatPromptTemplate.from_messages(
         [
         (
@@ -88,6 +85,8 @@ def setup_corrige_model(dernier_exo,reponse_user):
 
     runnable_corrige = prompt_corrige | model | StrOutputParser()
     cl.user_session.set("runnable", runnable_corrige)
+    cl.user_session.set("dernier_exo","")
+
 
 @cl.on_message
 async def on_message(message: cl.Message):
@@ -101,18 +100,21 @@ async def on_message(message: cl.Message):
     Returns:
         None : Envoie une réponse appropriée à l'utilisateur en fonction du contexte de la conversation.
     """
-    a_corriger != a_corriger
-    loisirs = cl.user_session.get("loisirs")
-    runnable = cl.user_session.get("runnable")  # type: Runnable
 
+
+    loisirs = cl.user_session.get("loisirs")
     if not loisirs:
         loisirs = message.content # récupération des loisirs
         cl.user_session.set("loisirs", loisirs)
-        setup_exercice_model() # préparation du prompt avec loisirs
         response = "Merci! Quel genre d'exercice voulez-vous?"
         await cl.Message(content=response).send()
     else:
-        if not a_corriger: # partie génération d'exercice
+        if not cl.user_session.get("dernier_exo"): # partie génération d'exercice
+            dernier_exo=""
+            print("partie génération d'exercice")
+            setup_exercice_model()
+            runnable = cl.user_session.get("runnable")
+
             msg = cl.Message(content="")
             async for chunk in runnable.astream(
                 {"question": message.content},
@@ -120,17 +122,19 @@ async def on_message(message: cl.Message):
             ):
                 await msg.stream_token(chunk)
                 dernier_exo += chunk
-                print(chunk)
+
+            cl.user_session.set("dernier_exo",dernier_exo)
             await msg.send()
-            print(message.content)
         else: # partie correction d'exercice
+            setup_corrige_model()
+            print("partie correction d'exercice")
+            runnable = cl.user_session.get("runnable")  # type: Runnable
+
             msg = cl.Message(content="")
             async for chunk in runnable.astream(
                 {"question": message.content},
                 config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
             ):
                 await msg.stream_token(chunk)
-                dernier_exo += chunk
-                print(chunk)
+                
             await msg.send()
-            print(message.content)
