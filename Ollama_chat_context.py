@@ -1,8 +1,11 @@
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable
 from langchain.schema.runnable.config import RunnableConfig
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
 
 import chainlit as cl
 
@@ -10,40 +13,36 @@ import chainlit as cl
 @cl.on_chat_start
 async def on_chat_start():
     model = Ollama(base_url="http://localhost:11434", model="llama3")
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "Tu parles en français. A chaque échange, tu vas recevoir l'historique des précédents messages pour que tu aies le contexte de la converssation mais garde le simplement comme historique, ne l'écrit pas."
-            ),
-            ("human", "{question}"),
-        ]
+
+    memory = ConversationBufferMemory(memory_key="history", input_key="input", max_token_limit=1000)
+    # memory.chat_memory.add_user_message("Bonjour je suis Etudiant")
+
+    prompt =  PromptTemplate(
+        input_variables=['history', 'input'],
+        template="""
+        Tu es un bot de conversation français. Un utilisateur va communiquer avec toi. Maintiens un ton formel dans tes réponses.
+        Historique de conversation :
+        {history}
+
+        Humain : {input}
+        AI :
+        """
     )
-    runnable = prompt | model | StrOutputParser()
-    cl.user_session.set("runnable", runnable)
+   
+    conversation = ConversationChain(memory=memory, prompt=prompt, llm=model)
+    cl.user_session.set("conversation", conversation)
 
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    runnable = cl.user_session.get("runnable")  # type: Runnable
-
-    with open('historique.txt', 'r') as f:
-        contenu = f.read()
-        print("contenu=",contenu)
-
-    with open('historique.txt', 'a') as ff:
-        ff.write(message.content)
-
-        ff.write('\n')
-
-    allMessages = contenu+message.content
-
+    runnable = cl.user_session.get("conversation")
 
     msg = cl.Message(content="")
     async for chunk in runnable.astream(
-        {"question": "Historique : "+contenu+"\nNouveau contexte :  ["+message.content+"]"},
+        {"input": message.content},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
-        await msg.stream_token(chunk)
+        print(chunk)
+        await msg.stream_token(chunk["response"])
 
     await msg.send()
