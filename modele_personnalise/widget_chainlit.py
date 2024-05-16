@@ -32,3 +32,18 @@ async def start():
         await cl.Message(
             content="Continue!",
         ).send()
+
+    res = await cl.AskUserMessage(content="What is your name?", timeout=10).send()
+    if res:
+        await cl.Message(
+            content=f"Your name is: {res['output']}",
+        ).send()
+    text_content = "Hello, this is a text element."
+    elements = [
+        cl.Text(name="simple_text", content=text_content, display="inline")
+    ]
+
+    await cl.Message(
+        content="Check out this text element!",
+        elements=elements,
+    ).send()
