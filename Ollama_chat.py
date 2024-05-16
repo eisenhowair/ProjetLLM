@@ -9,12 +9,12 @@ import chainlit as cl
 
 @cl.on_chat_start
 async def on_chat_start():
-    model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
+    model = Ollama(base_url="http://localhost:11434", model="llama3:8b",verbose=False)
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "Your only purpose is to answer email you're given with the correct formulation, so forth.",
+                "You are a helpful AI assistant. Answer the question concisely based on the context.",
             ),
             ("human", "{question}"),
         ]
