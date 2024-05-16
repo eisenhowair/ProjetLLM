@@ -15,13 +15,13 @@ Ajoute un fichier à la fois à l'index, fonctionne bien avec chainlit, mais len
 
 ### Code 
 
-https://github.com/ollama/ollama/issues/3938
+https://github.com/ollama/ollama/issues/3938 (langchain)
 
-https://github.com/vndee/local-rag-example
+https://github.com/AllAboutAI-YT/easy-local-rag (méthode tierce)
 
-https://github.com/AllAboutAI-YT/easy-local-rag
+https://github.com/vndee/local-rag-example (langchain)
 
-https://github.com/vndee/local-rag-example
+https://github.com/ollama/ollama/blob/main/docs/tutorials/langchainpy.md (langchain)
 
 ### Articles
 

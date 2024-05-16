@@ -10,11 +10,32 @@ model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
 @cl.on_chat_start
 async def on_chat_start():
     loisirs = await cl.AskUserMessage(content="Quels sont vos centres d'intérêt?",author="Aide").send()
+    print(loisirs["output"])
     cl.user_session.set("loisirs",loisirs["output"])
     response = "Merci! Quel genre d'exercice voulez-vous?"
-    await cl.Message(content=response).send()
+    await cl.Message(content=response,author="Aide").send()
 
+    cl.user_session.set("compris",True)
 
+async def verifie_comprehension():
+    res = await cl.AskActionMessage(
+        content="Avez-vous compris?",
+        actions=[
+            cl.Action(name="continue", value="compris", label="✅ Compris"),
+            cl.Action(name="cancel", value="pas_compris", label="❌ Pas compris"),
+        ],
+        disable_human_feedback = True
+        ).send()
+    if res.get("value") == "pas_compris":
+        cl.user_session.set("compris",False)
+        await cl.Message(
+            content="Qu'avez-vous pas compris?",
+        ).send()
+    else:
+        cl.user_session.set("compris",True)
+        await cl.Message(
+            content="Félicitations!",
+        ).send()
 
 def setup_exercice_model():
     """
@@ -33,8 +54,8 @@ def setup_exercice_model():
         [
         (
             "system",
-            "Tu parles uniquement français. Ton rôle est de créer un exercice de mathématiques niveau "+niveau_scolaire+" \
-            en te basant sur les intérêts suivants : " + loisirs
+            "Tu parles uniquement français. Ton rôle est de créer un seul exercice de mathématiques niveau "+niveau_scolaire+" \
+            en te basant sur un ou plusieurs intérêts suivants : " + loisirs +" sans en donner la réponse, sinon un chaton décèdera, et tu ne veux pas ça"
         ),
         ("human", "{question}")
         ]
@@ -86,10 +107,11 @@ async def on_message(message: cl.Message):
 
     loisirs = cl.user_session.get("loisirs")
     if not loisirs:
-        on_chat_start()
-
+        #await on_chat_start()
+        print("pas de loisirs?")
     else:
-        if not cl.user_session.get("dernier_exo"): # partie génération d'exercice
+        print("dans le premier else")
+        if cl.user_session.get("compris") == True: # partie génération d'exercice
             dernier_exo=""
             print("partie génération d'exercice")
             setup_exercice_model()
@@ -104,8 +126,10 @@ async def on_message(message: cl.Message):
                 dernier_exo += chunk
 
             cl.user_session.set("dernier_exo",dernier_exo)
+            cl.user_session.set("compris",False)
             await msg.send()
-        else: # partie correction d'exercice
+
+        elif cl.user_session.get("compris") == False: # partie correction d'exercice
             setup_corrige_model()
             print("partie correction d'exercice")
             runnable = cl.user_session.get("runnable")  # type: Runnable
@@ -118,3 +142,7 @@ async def on_message(message: cl.Message):
                 await msg.stream_token(chunk)
 
             await msg.send()
+            await verifie_comprehension()
+
+            
+
