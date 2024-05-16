@@ -11,7 +11,7 @@ model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
 @cl.on_chat_start
 async def on_chat_start():
     loisirs = await cl.AskUserMessage(content="Quels sont vos centres d'intérêt?", author="Aide", timeout=3000).send()
-    print(loisirs["output"])
+    #print(loisirs["output"])
     cl.user_session.set("loisirs", loisirs["output"])
     response = "Merci! Quel genre d'exercice voulez-vous?"
     await cl.Message(content=response, author="Aide").send()
@@ -77,7 +77,8 @@ def setup_corrige_model(indice_precedent = ""):
     """
 
     if cl.user_session.get("tentatives") < 3:
-        print("encore "+str(cl.user_session.get("tentatives"))+ "tentatives restantes avant solution")
+        print("partie aide d'exercice")
+        print("Nombre de tentatives faites: "+str(cl.user_session.get("tentatives")))
         prompt_corrige = ChatPromptTemplate.from_messages(
             [
                 (
@@ -90,6 +91,7 @@ def setup_corrige_model(indice_precedent = ""):
             ]
         )
     else:
+        print("partie correction d'exercice")
         prompt_corrige = ChatPromptTemplate.from_messages(
             [
                 (
@@ -121,45 +123,40 @@ async def on_message(message: cl.Message):
     """
 
     niveau_scolaire = "élémentaire"
-    loisirs = cl.user_session.get("loisirs")
-    if not loisirs:
-        #await on_chat_start()
-        print("eee")
-    else:
-        if cl.user_session.get("compris") == True:  # partie génération d'exercice
-            dernier_exo = ""
-            print("partie génération d'exercice")
-            setup_exercice_model()
-            runnable = cl.user_session.get("runnable")
 
-            msg = cl.Message(content="", author="Générateur")
-            async for chunk in runnable.astream(
-                {"question": message.content, "niveau_scolaire": niveau_scolaire},
-                config=RunnableConfig(
-                    callbacks=[cl.LangchainCallbackHandler()]),
-            ):
-                await msg.stream_token(chunk)
-                dernier_exo += chunk
-            cl.user_session.set("dernier_exo", dernier_exo)
-            cl.user_session.set("compris", False)
-            await msg.send()
+    if cl.user_session.get("compris") == True:  # partie génération d'exercice
+        dernier_exo = ""
+        print("partie génération d'exercice")
+        setup_exercice_model()
+        runnable = cl.user_session.get("runnable")
+
+        msg = cl.Message(content="", author="Générateur")
+        async for chunk in runnable.astream(
+            {"question": message.content, "niveau_scolaire": niveau_scolaire},
+            config=RunnableConfig(
+                callbacks=[cl.LangchainCallbackHandler()]),
+        ):
+            await msg.stream_token(chunk)
+            dernier_exo += chunk
+        cl.user_session.set("dernier_exo", dernier_exo)
+        cl.user_session.set("compris", False)
+        await msg.send()
 
         # partie correction d'exercice
-        elif cl.user_session.get("compris") == False:
-            setup_corrige_model()
-            print("partie correction d'exercice")
-            runnable = cl.user_session.get("runnable")  # type: Runnable
+    elif cl.user_session.get("compris") == False:
+        setup_corrige_model()
+        runnable = cl.user_session.get("runnable")  # type: Runnable
 
-            msg = cl.Message(content="", author="Correcteur")
-            async for chunk in runnable.astream(
-                {"question": message.content,
-                 "dernier_exo": cl.user_session.get("dernier_exo"),
-                 "niveau_scolaire": niveau_scolaire
-                 },
-                config=RunnableConfig(
-                    callbacks=[cl.LangchainCallbackHandler()]),
-            ):
-                await msg.stream_token(chunk)
-            print("msg:"+msg)
-            await msg.send()
-            await verifie_comprehension()
+        msg = cl.Message(content="", author="Correcteur")
+        async for chunk in runnable.astream(
+            {"question": message.content,
+                "dernier_exo": cl.user_session.get("dernier_exo"),
+                "niveau_scolaire": niveau_scolaire
+                },
+            config=RunnableConfig(
+                callbacks=[cl.LangchainCallbackHandler()]),
+        ):
+            await msg.stream_token(chunk)
+        print("msg:"+str(msg.content))
+        await msg.send()
+        await verifie_comprehension()
