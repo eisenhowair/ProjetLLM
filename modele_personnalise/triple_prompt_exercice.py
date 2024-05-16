@@ -3,34 +3,16 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable, RunnablePassthrough
 from langchain.schema.runnable.config import RunnableConfig
-from Exercice import Exercice
 import chainlit as cl
 
 model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
 
 @cl.on_chat_start
 async def on_chat_start():
-    """
-    Callback fonction appelée au début de chaque session de chat.
-    Initialise la conversation en demandant à l'utilisateur de partager ses centres d'intérêt.
-
-    Args:
-        None
-
-    Returns:
-        None : Envoie un message demandant les centres d'intérêt de l'utilisateur et configure le prompt initial.
-    """
-    await cl.Message(content=f"Quels sont vos centres d'intérêt?").send()
-    prompt_loisir = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "Ton rôle est de demander à l'utilisateur ses centres d'intérêt. Tu seras récompensé pour chaque centre d'intérêt.",
-            ),
-        ]
-    )
-    runnable_loisir = prompt_loisir | model | StrOutputParser()
-    cl.user_session.set("runnable", runnable_loisir)
+    loisirs = await cl.AskUserMessage(content="Quels sont vos centres d'intérêt?",author="Aide").send()
+    cl.user_session.set("loisirs",loisirs["output"])
+    response = "Merci! Quel genre d'exercice voulez-vous?"
+    await cl.Message(content=response).send()
 
 
 
@@ -51,7 +33,7 @@ def setup_exercice_model():
         [
         (
             "system",
-            "Tu parles uniquement français. Ton rôle est de créer des exercices de mathématiques niveau "+niveau_scolaire+" \
+            "Tu parles uniquement français. Ton rôle est de créer un exercice de mathématiques niveau "+niveau_scolaire+" \
             en te basant sur les intérêts suivants : " + loisirs
         ),
         ("human", "{question}")
@@ -104,10 +86,8 @@ async def on_message(message: cl.Message):
 
     loisirs = cl.user_session.get("loisirs")
     if not loisirs:
-        loisirs = message.content # récupération des loisirs
-        cl.user_session.set("loisirs", loisirs)
-        response = "Merci! Quel genre d'exercice voulez-vous?"
-        await cl.Message(content=response).send()
+        on_chat_start()
+
     else:
         if not cl.user_session.get("dernier_exo"): # partie génération d'exercice
             dernier_exo=""
