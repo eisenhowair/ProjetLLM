@@ -1,8 +1,32 @@
 import chainlit as cl
 from chainlit.input_widget import TextInput,Select,Switch,Slider
 
-""""
-import ollama
+from typing import Optional
+
+"""
+@cl.set_chat_profiles
+async def chat_profile():
+    return [
+        cl.ChatProfile(
+            name="GPT-3.5",
+            markdown_description="The underlying LLM model is **GPT-3.5**.",
+            icon="https://picsum.photos/200",
+        ),
+        cl.ChatProfile(
+            name="GPT-4",
+            markdown_description="The underlying LLM model is **GPT-4**.",
+            icon="https://picsum.photos/250",
+        ),
+    ]
+
+@cl.on_chat_start
+async def on_chat_start():
+    chat_profile = cl.user_session.get("chat_profile")
+    await cl.Message(
+        content=f"starting chat using the {chat_profile} chat profile"
+    ).send()
+
+"""
 
 @cl.on_chat_start
 async def on_chat_start():
@@ -16,7 +40,7 @@ async def generate_response(query: cl.Message):
     chat_history.append({"role": "user", "content": query.content})
     
     response = cl.Message(content="")
-    answer = ollama.chat(model="llama3:8b", messages=chat_history, stream=True)
+    answer = 'ollama.chat(model="llama3:8b", messages=chat_history, stream=True)'
     
     complete_answer = ""
     for token_dict in answer:
@@ -28,7 +52,7 @@ async def generate_response(query: cl.Message):
     cl.user_session.set("chat_history", chat_history)
 
     await response.send()
-"""
+
 @cl.on_chat_start
 async def start():
     settings = await cl.ChatSettings(
@@ -41,11 +65,17 @@ async def start():
                 initial_index=0,
             ),
             Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
+            Slider(
+                id="SAI_Height",
+                label="Stability AI - Image Height",
+                initial=512,
+                min=256,
+                max=2048,
+                step=64,
+                tooltip="Measured in pixels",
+            ),
         ]
     ).send()
-    print(settings["AgentName"])
-    print(settings["Model"])
-    print(settings["Streaming"])
 
     res = await cl.AskActionMessage(
         content="Pick an action!",
@@ -74,3 +104,7 @@ async def start():
         content="Check out this text element!",
         elements=elements,
     ).send()
+
+@cl.on_settings_update
+async def setup_agent(settings):
+    print("on_settings_update", settings)
