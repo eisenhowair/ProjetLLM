@@ -4,15 +4,26 @@ from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable
 from langchain.schema.runnable.config import RunnableConfig
 import chainlit as cl
-from chainlit.input_widget import TextInput,Select,Switch,Slider
+from chainlit.input_widget import Slider
 
 
-model = Ollama(base_url="http://localhost:11434", model="llama3:instruct", mirostat=1,mirostat_eta = 2)
+model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
+
+@cl.password_auth_callback
+def auth_callback(username: str, password: str):
+    # Fetch the user matching username from your database
+    # and compare the hashed password with the value stored in the database
+    if (username, password) == ("admin", "admin"):
+        return cl.User(
+            identifier="admin", metadata={"role": "admin", "provider": "credentials"}
+        )
+    else:
+        return None
 
 @cl.on_chat_start
 async def on_chat_start():
-    settings = await cl.ChatSettings(
+    await cl.ChatSettings(
         [
             Slider(
                 id="age_cible",
@@ -63,7 +74,7 @@ async def verifie_comprehension():
             content="Félicitations! Quel autre exercice voulez-vous?",
         ).send()
 
-@cl.step(type="runnable",name="runnable_generation")
+@cl.step(type="run",name="runnable_generation")
 def setup_exercice_model():
     """
     Configure le prompt et le Runnable pour générer des exercices de mathématiques personnalisés en fonction des centres d'intérêt de l'utilisateur.
@@ -88,7 +99,7 @@ def setup_exercice_model():
     cl.user_session.set("runnable", runnable_exercice)
     return runnable_exercice
 
-@cl.step(type="runnable",name="runnable_corrige")
+@cl.step(type="run",name="runnable_corrige")
 def setup_corrige_model(indice_precedent = ""):
     if cl.user_session.get("tentatives") < 3:
         print("partie aide d'exercice")
@@ -185,4 +196,3 @@ async def on_message(message: cl.Message):
 @cl.on_settings_update
 async def setup_agent(settings):
     cl.user_session.set("age_niveau",settings['age_cible'])
-    print("on_settings_update", settings)
