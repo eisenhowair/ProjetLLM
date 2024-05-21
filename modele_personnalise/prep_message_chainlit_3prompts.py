@@ -11,6 +11,8 @@ model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 async def verifie_comprehension():
 
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
+    current_discussion = cl.user_session.get("memory_discussion")
+
     res = await cl.AskActionMessage(
         content="Avez-vous compris?",
         actions=[
@@ -31,18 +33,25 @@ async def verifie_comprehension():
         msg = await cl.Message(
             content="Qu'avez-vous pas compris?",
         ).send()
+
+        current_discussion.chat_memory.add_ai_message("Avez-vous compris?")
+        current_discussion.chat_memory.add_user_message(res.get("value"))
+        current_discussion.chat_memory.add_ai_message(msg.content)
     else:
         cl.user_session.set("compris", True)
         cl.user_session.set("tentatives", 1)
 
         msg = await cl.Message(
-            content="Félicitations! Quel autre exercice voulez-vous?",
+            content="Félicitations! Quel autre type d'exercice voulez-vous?",
         ).send()
+        # on reset la mémoire actuelle lorsqu'on change d'exercice
+        cl.user_session.set("memory_discussion",ConversationBufferMemory(return_messages=True))
     
-    # on met à jour l'historique
+    # on met à jour l'historique global et actuel
     memory.chat_memory.add_ai_message("Avez-vous compris?")
     memory.chat_memory.add_user_message(res.get("value"))
     memory.chat_memory.add_ai_message(msg.content)
+
 
 
 @cl.step(type="run", name="runnable_generation")
@@ -54,7 +63,7 @@ def setup_exercice_model():
         None : Met à jour la session utilisateur avec le nouveau Runnable pour générer des exercices.
     """
 
-    memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
+    memory = cl.user_session.get("memory_discussion")  # type: ConversationBufferMemory
     loisirs = cl.user_session.get("loisirs")
     prompt_exercice = ChatPromptTemplate.from_messages(
         [
@@ -83,7 +92,7 @@ def setup_exercice_model():
 
 @cl.step(type="run", name="runnable_corrige")
 def setup_corrige_model():
-    memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
+    memory = cl.user_session.get("memory_discussion")  # type: ConversationBufferMemory
     if cl.user_session.get("tentatives") < 3:
         print("partie aide d'exercice")
         print("Nombre de tentatives faites: " +
@@ -123,6 +132,43 @@ def setup_corrige_model():
             | prompt_corrige
             | model 
             | StrOutputParser())
+    # cl.user_session.set("runnable", runnable_corrige)
+    if cl.user_session.get("compris") == True:
+        cl.user_session.set("dernier_exo", "")
+
+    return runnable_corrige
+
+
+
+@cl.step(type="run", name="aide réponse")
+def setup_aide_model():
+    memory = cl.user_session.get("memory_discussion")  # type: ConversationBufferMemory
+    
+    prompt_corrige = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Tu es un maître d'école avec des élèves de {niveau_scolaire} français. Ton rôle est d'aider l'utilisateur à résoudre l'exercice de mathématiques suivant : {dernier_exo}. "
+            "Si la réponse de l'utilisateur n'est pas correcte, donne un indice utile pour l'aider à trouver la solution. "
+            "S'il répond correctement, félicite-le. Nombre de tentatives : {tentatives}. "
+            "Si le nombre de tentatives est inférieur à 3, tu ne dois jamais donner la réponse toi-même. "
+            "Si le nombre de tentatives est égal ou supérieur à 3 et que la réponse est toujours incorrecte, alors tu dois fournir la réponse correcte."
+            "Tu dois t'exprimer uniquement en français, sauf si l'énoncé du problème ou la réponse l'exigent autrement."  # Ajout de l'instruction pour la langue
+        ),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{question}")
+    ]
+    )
+
+    runnable_corrige = (
+        RunnablePassthrough.assign(
+            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
+        )
+        | prompt_corrige
+        | model
+        | StrOutputParser()
+    )
+
     # cl.user_session.set("runnable", runnable_corrige)
     if cl.user_session.get("compris") == True:
         cl.user_session.set("dernier_exo", "")
