@@ -1,4 +1,5 @@
 import os
+import chainlit as cl
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
     CharacterTextSplitter,
@@ -8,29 +9,22 @@ from langchain_community.llms import Ollama
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain.schema.runnable.config import RunnableConfig
+from langchain_core.output_parsers import StrOutputParser
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
+from langchain.memory import ConversationBufferMemory
+
+from operator import itemgetter
 from PyPDF2 import PdfReader
 from typing import List
-import chainlit as cl
-from langchain.schema.runnable.config import RunnableConfig
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-
 
 # Configuration
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 index_path = "data/vectorstore/temp-index.faiss"
 
 model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
-prompt = PromptTemplate(
-    template="""You are a helpful AI assistant. Answer the question based solely on the context. For each correct answer, you will be given $2000 for each member of your family
 
-Context: {context}
-Question: {question}
-
-Answer:""",
-    input_variables=["context", "question"],
-)
 
 # Global index variable
 faiss_index = None
@@ -65,39 +59,81 @@ def load_documents_from_directory(directory):
     return documents
 
 
-# Load all documents individually
-documents = load_documents_from_directory("differents_textes")
 
-# Initialize CharacterTextSplitter
-text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 
-# Split each document into chunks
-chunks = []
-for doc in documents:
-    splits = text_splitter.create_documents(text_splitter.split_text(doc["content"]))
-    for split in splits:
-        split.metadata = {"source": doc["source"]}
-        chunks.append(split)
+@cl.step(type="run", name="runnable_generation")
+def setup_model():
 
-vectorstore = FAISS.from_documents(
-    documents=chunks,
-    embedding=OllamaEmbeddings(
-        base_url="http://localhost:11434",
-        model="nomic-embed-text",
-        show_progress="true",
-        temperature=0,
-    ),
+    memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
+    prompt_exercice = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """Tu parles uniquement français. Ton rôle est de répondre à la question de l'utilisateur en te basant **uniquement** sur le contexte fourni. 
+            Si tu ne trouves pas la réponse dans le contexte, dis-le clairement au lieu de deviner. 
+            Contexte: {context}"""
+        ),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{question}")
+    ]
 )
 
-vectorstore.save_local(index_path)
+    runnable_exercice = (
+        RunnablePassthrough.assign(
+            history=RunnableLambda(
+                memory.load_memory_variables) | itemgetter("history")
+        ) 
+        | prompt_exercice
+        | model
+        | StrOutputParser()
+    )
+    return runnable_exercice
 
-retriever = vectorstore.as_retriever()
+@cl.step(type="retrieval", name="Context via similarity_search")
+def trouve_contexte(question):
 
+    retriever = cl.user_session.get("retriever")
+    search_results = retriever.vectorstore.similarity_search(question, k=5)
+    filenames = [result.metadata["source"] for result in search_results]
+    print("Files used for context:", filenames)
+    context = "\n".join([result.page_content for result in search_results])
+
+    return context
 
 @cl.on_chat_start
 async def factory():
+    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
 
+    # Load all documents individually
+    documents = load_documents_from_directory("differents_textes")
+
+    # Initialize CharacterTextSplitter
+    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+
+    # Split each document into chunks
+    chunks = []
+    for doc in documents:
+        splits = text_splitter.create_documents(text_splitter.split_text(doc["content"]))
+        for split in splits:
+            split.metadata = {"source": doc["source"]}
+            chunks.append(split)
+
+    vectorstore = FAISS.from_documents(
+        documents=chunks,
+        embedding=OllamaEmbeddings(
+            base_url="http://localhost:11434",
+            model="nomic-embed-text",
+            show_progress="true",
+            temperature=0,
+        ),
+    )
+
+    vectorstore.save_local(index_path)
+
+    retriever = vectorstore.as_retriever()
+    cl.user_session.set("retriever",retriever)
     # Set up the QA chain
+    """
     qa_chain = RetrievalQA.from_chain_type(
         llm=model,
         chain_type="stuff",
@@ -108,10 +144,18 @@ async def factory():
 
     cl.user_session.set("chain", qa_chain)
 
-    msg = cl.Message(content="The bot is initialized. Ask your questions!")
-    await msg.send()
     question_manuelle = input("Question:")
-    search_results = retriever.vectorstore.similarity_search(question_manuelle, k=3)
+    """
+
+
+    #manual_test()
+    
+    
+def manual_test():
+
+    retriever = cl.user_session.get("retriever")
+    question_manuelle="Comment s'appelle le boss final de Elias adventure"
+    search_results = retriever.vectorstore.similarity_search(question_manuelle, k=5)
     filenames = [result.metadata["source"] for result in search_results]
     print("Files used for context:", filenames)
     context = "\n".join([result.page_content for result in search_results])
@@ -121,18 +165,36 @@ async def factory():
         "context": context,
         "question": question_manuelle,
     }
+    
     # use the context to answer the question
-    rag_chain = RunnablePassthrough() | prompt | model | StrOutputParser()
+    prompt_exercice = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "Tu parles uniquement français. Ton rôle est de répondre à la question de l'utilisateur en te basant uniquement sur le contexte,\
+                Contexte: {context}"
+            ),
+            ("human", "{question}")
+        ]
+    )
+    rag_chain = RunnablePassthrough() | prompt_exercice | model | StrOutputParser()
     print("Answer:", rag_chain.invoke(rag_data))
-
 
 @cl.on_message
 async def main(message):
-    chain = cl.user_session.get("chain")
+    #chain = cl.user_session.get("chain")
+    memory= cl.user_session.get("memory")
+
+
+    # setup_model() et trouve_contexte() à adapter suivant ce qui est recherché
+    runnable_model = setup_model()
     msg = cl.Message(content="")
-    async for chunk in chain.astream(
-        {"query": message.content},
+    async for chunk in runnable_model.astream(
+        {"question": message.content,"context": trouve_contexte(message.content)},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
-        await msg.stream_token(chunk["result"])
+        await msg.stream_token(chunk)
+
+    memory.chat_memory.add_user_message(message.content)
+    memory.chat_memory.add_ai_message(msg.content)
     await msg.send()
