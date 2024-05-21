@@ -1,4 +1,5 @@
 import os
+import json
 import chainlit as cl
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
@@ -39,6 +40,9 @@ def read_text_from_file(file_path: str) -> str:
     elif file_path.lower().endswith(".txt"):
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
             return f.read()
+    elif file_path.lower().endswith(".json"):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.dumps(json.load(f))
     else:
         raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
 
@@ -48,8 +52,8 @@ def load_documents_from_directory(directory):
     documents = []
     for root, _, files in os.walk(directory):
         for filename in files:
-            print("Traitement de ", filename)
-            if filename.lower().endswith((".txt", ".pdf")):
+            if filename.lower().endswith((".txt", ".pdf",".json")):
+                print("Traitement de ", filename)
                 file_path = os.path.join(root, filename)
                 try:
                     content = read_text_from_file(file_path)
@@ -61,7 +65,7 @@ def load_documents_from_directory(directory):
 
 
 
-@cl.step(type="run", name="runnable_generation")
+@cl.step(type="run", name="Mise en place du Runnable")
 def setup_model():
 
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
@@ -89,6 +93,7 @@ def setup_model():
     )
     return runnable_exercice
 
+
 @cl.step(type="retrieval", name="Context via similarity_search")
 def trouve_contexte(question):
 
@@ -100,6 +105,7 @@ def trouve_contexte(question):
 
     return context
 
+
 @cl.on_chat_start
 async def factory():
     cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
@@ -108,7 +114,7 @@ async def factory():
     documents = load_documents_from_directory("differents_textes")
 
     # Initialize CharacterTextSplitter
-    text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=40)
 
     # Split each document into chunks
     chunks = []
@@ -195,6 +201,6 @@ async def main(message):
     ):
         await msg.stream_token(chunk)
 
-    memory.chat_memory.add_user_message(message.content)
-    memory.chat_memory.add_ai_message(msg.content)
+    #memory.chat_memory.add_user_message(message.content)
+    #memory.chat_memory.add_ai_message(msg.content)
     await msg.send()
