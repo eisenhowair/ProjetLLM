@@ -1,5 +1,6 @@
 <!-- GETTING STARTED -->
 <a name="readme-top"></a>
+# Modèle à des fins de Génération et Aide à la Résolution d'exercices mathématiques
 
 ## Introduction
 
@@ -58,6 +59,6 @@ Le programme dispose aussi de fonctions permettant de quitter la discussion pour
 
 ## Intérêt par rapport aux précédentes versions
 
-Le fichier exo_math_3prompts.p utilise un prompt pour aier l'utilisateur avec les indices, et un autre pour donner la réponse. Cela créait des malentendus dans certains cas, en plus de ne pas être très fluide.
+Le fichier exo_math_3prompts.py utilise un prompt pour aier l'utilisateur avec les indices, et un autre pour donner la réponse. Cela créait des malentendus dans certains cas, en plus de ne pas être très fluide.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
