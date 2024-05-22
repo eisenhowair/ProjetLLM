@@ -1,0 +1,70 @@
+{
+  "magasins": [
+    {
+      "nom": "Supermarché Alimentation Plus",
+      "horaires": {
+        "lundi": {
+          "ouverture": "8h00",
+          "fermeture": "21h00"
+        },
+        "mardi": {
+          "ouverture": "8h00",
+          "fermeture": "21h00"
+        },
+        "mercredi": {
+          "ouverture": "8h00",
+          "fermeture": "21h00"
+        },
+        "jeudi": {
+          "ouverture": "8h00",
+          "fermeture": "21h00"
+        },
+        "vendredi": {
+          "ouverture": "8h00",
+          "fermeture": "22h00"
+        },
+        "samedi": {
+          "ouverture": "7h00",
+          "fermeture": "22h00"
+        },
+        "dimanche": {
+          "ouverture": "9h00",
+          "fermeture": "20h00"
+        }
+      }
+    },
+    {
+      "nom": "Boutique Chic Mode",
+      "horaires": {
+        "lundi": {
+          "ouverture": "10h00",
+          "fermeture": "19h00"
+        },
+        "mardi": {
+          "ouverture": "10h00",
+          "fermeture": "19h00"
+        },
+        "mercredi": {
+          "ouverture": "10h00",
+          "fermeture": "19h00"
+        },
+        "jeudi": {
+          "ouverture": "10h00",
+          "fermeture": "21h00"
+        },
+        "vendredi": {
+          "ouverture": "10h00",
+          "fermeture": "21h00"
+        },
+        "samedi": {
+          "ouverture": "10h00",
+          "fermeture": "19h00"
+        },
+        "dimanche": {
+          "ouverture": "fermé",
+          "fermeture": "fermé"
+        }
+      }
+    }
+  ]
+}
