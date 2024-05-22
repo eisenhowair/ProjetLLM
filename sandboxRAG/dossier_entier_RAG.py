@@ -24,69 +24,73 @@ from typing import List
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 index_path = "data/vectorstore/temp-index.faiss"
 
-model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
-
+model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
 # Global index variable
 faiss_index = None
 
-
 # Function to read PDF and return text
+
+
 def read_text_from_file(file_path: str) -> str:
     if file_path.lower().endswith(".pdf"):
         with open(file_path, "rb") as f:
             reader = PdfReader(f)
-            return "\n".join(page.extract_text() or "" for page in reader.pages)
+            metadata = reader.metadata
+            text = "\n".join(page.extract_text()
+                             or "" for page in reader.pages)
+            return text, metadata
     elif file_path.lower().endswith(".txt"):
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            return f.read()
+            return f.read(), {}
     elif file_path.lower().endswith(".json"):
         with open(file_path, 'r', encoding='utf-8') as f:
-            return json.dumps(json.load(f))
+            return json.dumps(json.load(f)), {}
     else:
-        raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
-
+        raise ValueError(
+            "Unsupported file type. Please upload a .txt or .pdf file.")
 
 # Function to load documents individually
+
+
 def load_documents_from_directory(directory):
     documents = []
     for root, _, files in os.walk(directory):
         for filename in files:
-            if filename.lower().endswith((".txt", ".pdf",".json")):
+            if filename.lower().endswith((".txt", ".pdf", ".json")):
                 print("Traitement de ", filename)
                 file_path = os.path.join(root, filename)
                 try:
-                    content = read_text_from_file(file_path)
-                    documents.append({"content": content, "source": file_path})
+                    text, metadata = read_text_from_file(file_path)
+                    documents.append(
+                        {"content": text, "source": file_path, "metadata": metadata})
                 except ValueError as e:
                     print(f"Error processing {file_path}: {e}")
     return documents
 
 
-
-
 @cl.step(type="run", name="Mise en place du Runnable")
 def setup_model():
-
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
     prompt_exercice = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """Tu parles uniquement français. Ton rôle est de répondre à la question de l'utilisateur en te basant **uniquement** sur le contexte fourni. 
-            Si tu ne trouves pas la réponse dans le contexte, dis-le clairement au lieu de deviner. 
-            Contexte: {context}"""
-        ),
-        MessagesPlaceholder(variable_name="history"),
-        ("human", "{question}")
-    ]
-)
+        [
+            (
+                "system",
+                """Ton rôle est de répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte fourni. 
+                Si tu ne trouves pas la réponse dans le contexte, dis-le clairement au lieu de deviner. 
+                Voici le contexte avec les sources :
+                {context}"""
+            ),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{question}")
+        ]
+    )
 
     runnable_exercice = (
         RunnablePassthrough.assign(
             history=RunnableLambda(
                 memory.load_memory_variables) | itemgetter("history")
-        ) 
+        )
         | prompt_exercice
         | model
         | StrOutputParser()
@@ -96,111 +100,101 @@ def setup_model():
 
 @cl.step(type="retrieval", name="Context via similarity_search")
 def trouve_contexte(question):
-
     retriever = cl.user_session.get("retriever")
-    search_results = retriever.vectorstore.similarity_search(question, k=5)
-    filenames = [result.metadata["source"] for result in search_results]
-    print("Files used for context:", filenames)
-    context = "\n".join([result.page_content for result in search_results])
+    search_results = retriever.vectorstore.similarity_search(question, k=20)
 
+    # Utiliser un dictionnaire pour regrouper les chunks par source
+    results_by_source = {}
+    for result in search_results:
+        source = result.metadata["source"]
+        if source not in results_by_source:
+            results_by_source[source] = []
+        results_by_source[source].append(result)
+
+    # Limiter à 5 sources différentes et récupérer plusieurs chunks par source
+    relevant_sources = list(results_by_source.keys())[:5]
+    # Récupérer jusqu'à 5 chunks par source
+    relevant_results = [results_by_source[source][:5]
+                        for source in relevant_sources]
+
+    # Aplatir la liste des résultats
+    relevant_results = [
+        chunk for sublist in relevant_results for chunk in sublist]
+
+    filenames = [result.metadata["source"] for result in relevant_results]
+    print("Files used for context:", filenames)
+    context = "\n".join(
+        [f"Source: {result.metadata['source']}\n{result.page_content}" for result in relevant_results])
+
+    print("-------------------\n"+context)
     return context
 
 
 @cl.on_chat_start
 async def factory():
-    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set(
+        "memory", ConversationBufferMemory(return_messages=True))
 
-    # Load all documents individually
-    documents = load_documents_from_directory("differents_textes")
+    if os.path.exists(index_path):
+        vectorstore = FAISS.load_local(index_path,
+                                       embeddings=OllamaEmbeddings(
+                                           base_url="http://localhost:11434",
+                                           model="nomic-embed-text",
+                                           show_progress="true",
+                                           temperature=0,
+                                       ),
+                                       allow_dangerous_deserialization=True
+                                       )
+        print("Index chargé à partir du chemin existant.")
+    else:
+        # Load all documents individually
+        documents = load_documents_from_directory("differents_textes")
 
-    # Initialize CharacterTextSplitter
-    text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=40)
+        # Initialize CharacterTextSplitter
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=300, chunk_overlap=150)
 
-    # Split each document into chunks
-    chunks = []
-    for doc in documents:
-        splits = text_splitter.create_documents(text_splitter.split_text(doc["content"]))
-        for split in splits:
-            split.metadata = {"source": doc["source"]}
-            chunks.append(split)
+        # Split each document into chunks
+        chunks = []
+        for doc in documents:
+            splits = text_splitter.create_documents(
+                text_splitter.split_text(doc["content"]))
+            for split in splits:
+                split.metadata = {
+                    "source": doc["source"], **doc.get("metadata", {})}
+                chunks.append(split)
 
-    vectorstore = FAISS.from_documents(
-        documents=chunks,
-        embedding=OllamaEmbeddings(
-            base_url="http://localhost:11434",
-            model="nomic-embed-text",
-            show_progress="true",
-            temperature=0,
-        ),
-    )
+        vectorstore = FAISS.from_documents(
+            documents=chunks,
+            embedding=OllamaEmbeddings(
+                base_url="http://localhost:11434",
+                model="nomic-embed-text",
+                show_progress="true",
+                temperature=0,
+            )
+        )
 
-    vectorstore.save_local(index_path)
+        vectorstore.save_local(index_path)
+        print("Nouvel index créé et sauvegardé.")
 
     retriever = vectorstore.as_retriever()
-    cl.user_session.set("retriever",retriever)
-    # Set up the QA chain
-    """
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=model,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": prompt},
-    )
+    cl.user_session.set("retriever", retriever)
 
-    cl.user_session.set("chain", qa_chain)
-
-    question_manuelle = input("Question:")
-    """
-
-
-    #manual_test()
-    
-    
-def manual_test():
-
-    retriever = cl.user_session.get("retriever")
-    question_manuelle="Comment s'appelle le boss final de Elias adventure"
-    search_results = retriever.vectorstore.similarity_search(question_manuelle, k=5)
-    filenames = [result.metadata["source"] for result in search_results]
-    print("Files used for context:", filenames)
-    context = "\n".join([result.page_content for result in search_results])
-    # context = search_results[0].page_content
-    print("Question:", question_manuelle)
-    rag_data = {
-        "context": context,
-        "question": question_manuelle,
-    }
-    
-    # use the context to answer the question
-    prompt_exercice = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "Tu parles uniquement français. Ton rôle est de répondre à la question de l'utilisateur en te basant uniquement sur le contexte,\
-                Contexte: {context}"
-            ),
-            ("human", "{question}")
-        ]
-    )
-    rag_chain = RunnablePassthrough() | prompt_exercice | model | StrOutputParser()
-    print("Answer:", rag_chain.invoke(rag_data))
 
 @cl.on_message
 async def main(message):
-    #chain = cl.user_session.get("chain")
-    memory= cl.user_session.get("memory")
-
+    memory = cl.user_session.get("memory")
+    question = message.content
+    print("Question:"+question)
 
     # setup_model() et trouve_contexte() à adapter suivant ce qui est recherché
     runnable_model = setup_model()
     msg = cl.Message(content="")
     async for chunk in runnable_model.astream(
-        {"question": message.content,"context": trouve_contexte(message.content)},
+        {"question": question,
+            "context": trouve_contexte(question)},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         await msg.stream_token(chunk)
 
-    #memory.chat_memory.add_user_message(message.content)
-    #memory.chat_memory.add_ai_message(msg.content)
     await msg.send()
