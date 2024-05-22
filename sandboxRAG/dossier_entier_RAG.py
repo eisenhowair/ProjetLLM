@@ -26,13 +26,21 @@ index_path = "data/vectorstore/temp-index.faiss"
 
 model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
+# embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model)
+embeddings_OL = OllamaEmbeddings(
+    base_url="http://localhost:11434",
+    model="nomic-embed-text",
+    show_progress="true",
+    temperature=0,
+)
+
 # Global index variable
 faiss_index = None
 
-# Function to read PDF and return text
-
 
 def read_text_from_file(file_path: str) -> str:
+    """Function to read PDF and return text"""
+
     if file_path.lower().endswith(".pdf"):
         with open(file_path, "rb") as f:
             reader = PdfReader(f)
@@ -76,13 +84,12 @@ def setup_model():
         [
             (
                 "system",
-                """Ton rôle est de répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte fourni. 
-                Si tu ne trouves pas la réponse dans le contexte, dis-le clairement au lieu de deviner. 
-                Voici le contexte avec les sources :
+                """Ton rôle est de répondre en francais à cette question {question} de l'utilisateur en te basant **uniquement** sur le contexte fourni. 
+                Si tu ne trouves pas la réponse dans le contexte, demande à l'utilisateur d'être plus précis au lieu de deviner. 
+                Voici le contexte nécessaire avec les sources :
                 {context}"""
             ),
             MessagesPlaceholder(variable_name="history"),
-            ("human", "{question}")
         ]
     )
 
@@ -114,7 +121,7 @@ def trouve_contexte(question):
     # Limiter à 5 sources différentes et récupérer plusieurs chunks par source
     relevant_sources = list(results_by_source.keys())[:5]
     # Récupérer jusqu'à 5 chunks par source
-    relevant_results = [results_by_source[source][:5]
+    relevant_results = [results_by_source[source][:10]
                         for source in relevant_sources]
 
     # Aplatir la liste des résultats
@@ -122,9 +129,10 @@ def trouve_contexte(question):
         chunk for sublist in relevant_results for chunk in sublist]
 
     filenames = [result.metadata["source"] for result in relevant_results]
-    print("Files used for context:", filenames)
+    short_filenames = [os.path.basename(file) for file in filenames]
+    print("Files used for context:", short_filenames)
     context = "\n".join(
-        [f"Source: {result.metadata['source']}\n{result.page_content}" for result in relevant_results])
+        [f"-----\nSource: {os.path.basename(result.metadata['source'])}\n{result.page_content}" for result in relevant_results])
 
     print("-------------------\n"+context)
     return context
@@ -137,12 +145,7 @@ async def factory():
 
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(index_path,
-                                       embeddings=OllamaEmbeddings(
-                                           base_url="http://localhost:11434",
-                                           model="nomic-embed-text",
-                                           show_progress="true",
-                                           temperature=0,
-                                       ),
+                                       embeddings=embeddings_OL,
                                        allow_dangerous_deserialization=True
                                        )
         print("Index chargé à partir du chemin existant.")
@@ -166,12 +169,7 @@ async def factory():
 
         vectorstore = FAISS.from_documents(
             documents=chunks,
-            embedding=OllamaEmbeddings(
-                base_url="http://localhost:11434",
-                model="nomic-embed-text",
-                show_progress="true",
-                temperature=0,
-            )
+            embedding=embeddings_OL
         )
 
         vectorstore.save_local(index_path)
