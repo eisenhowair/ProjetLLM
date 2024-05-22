@@ -16,32 +16,36 @@ embedding = OllamaEmbeddings(base_url="http://localhost:11434", model="nomic-emb
 
 start = time.time()#
 
+file_paths = ["./liam.txt", "./emma.txt", "./ammamellen.txt"]
+doc_ids = {file_path: i for i, file_path in enumerate(file_paths)}
+
 # Texte Loader
-# loader = TextLoader("./liam.txt")
-# data = loader.load()
-# loader = TextLoader("./emma.txt")
-# data2 = loader.load()
-# loader=TextLoader('./ammamellen.txt')
-# data3 = loader.load()
-    
-# docs = data + data2 + data3
+def load_documents(file_paths):
+    docs = []
+    for file_path in file_paths:
+        loader = TextLoader(file_path)
+        data = loader.load()
+        docs.extend(data)
+    return docs
+
+docs = load_documents(file_paths)
 
 
 #PDFLoader
-import PyPDF2
+# import PyPDF2
 
-def load_pdf_as_document(file_path):
-    pdf = PyPDF2.PdfReader(file_path)
-    pdf_text = ""
-    for page in pdf.pages:
-        pdf_text += page.extract_text()
-    return Document(page_content=pdf_text, metadata={"source": file_path})
+# def load_pdf_as_document(file_path):
+#     pdf = PyPDF2.PdfReader(file_path)
+#     pdf_text = ""
+#     for page in pdf.pages:
+#         pdf_text += page.extract_text()
+#     return Document(page_content=pdf_text, metadata={"source": file_path})
 
-pdf_doc1 = load_pdf_as_document("Dumas_Les_trois_mousquetaires_1.pdf")
-# pdf_doc2 = load_pdf_as_document("emma.pdf")
-# pdf_doc3 = load_pdf_as_document("ammamellen.pdf")
+# pdf_doc1 = load_pdf_as_document("Dumas_Les_trois_mousquetaires_1.pdf")
+# # pdf_doc2 = load_pdf_as_document("emma.pdf")
+# # pdf_doc3 = load_pdf_as_document("ammamellen.pdf")
 
-docs = [pdf_doc1]
+# docs = [pdf_doc1]
 
 
 #JSON Loader
@@ -85,8 +89,21 @@ retriever = ParentDocumentRetriever(
     parent_splitter=parent_splitter
 )
 
-retriever.add_documents(docs, ids=None)
+# idss = [doc_ids[doc.metadata['source']] for doc in docs]
 
+# if idss is None:
+#     raise ValueError(
+#         "If ids are not passed in, `add_to_docstore` MUST be True"
+#     )
+# else:
+#     if len(docs) != len(idss):
+#         raise ValueError(
+#             "Gooooooooooooooooooooot uneven list of documents and ids. "
+#             "If `ids` is provided, should be same length as `documents`."
+#         )
+    
+
+retriever.add_documents(docs, ids=[doc_ids[doc.metadata['source']] for doc in docs])
 
 end = time.time()#
 timee = end - start#
@@ -97,7 +114,7 @@ print("embedding similarity_search=",timee)#
 
 start = time.time()#
 
-res_similarity_search = vectorstore.similarity_search("Qui est Grimaud ?")
+res_similarity_search = vectorstore.similarity_search("Qui est Lyra ?")
 
 end = time.time()#
 timee = end - start#
@@ -116,11 +133,16 @@ print("Sources :")
 for b in sources:
     print(b)
 
+relevant_docs = [doc for doc in docs if doc.metadata['source'] in sources]
+
+
+print(relevant_docs)
+
 
 ####INVOKE
     
 #load relevants documents
-docs = []
+# docs = []
 
 #txt
 # for source in sources:
@@ -129,14 +151,17 @@ docs = []
 #     docs.extend(data)
 
 #pdf
-for source in sources:
-    data = load_pdf_as_document(source)
-    docs.append(data)
+# for source in sources:
+#     data = load_pdf_as_document(source)
+#     docs.append(data)
 
 #json
 # for source in sources:
 #     data = load_json_as_document(source)
 #     docs.append(data)
+
+
+
 
 
 end = time.time()#
@@ -145,64 +170,64 @@ print("Chargement des documents pertinents=",timee)#
 
 
 
-start = time.time()#    
+# start = time.time()#    
     
-child_splitter = RecursiveCharacterTextSplitter(chunk_size=120, chunk_overlap=20)
+# child_splitter = RecursiveCharacterTextSplitter(chunk_size=120, chunk_overlap=20)
 
-parent_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
-
-
-vectorstore = Chroma(
-    collection_name="relevants_documents", embedding_function=embedding
-)
-
-store = InMemoryStore()
-retriever = ParentDocumentRetriever(
-    vectorstore=vectorstore,
-    docstore=store,
-    child_splitter=child_splitter,
-    parent_splitter=parent_splitter
-)
-
-retriever.add_documents(docs, ids=None)
-
-end = time.time()#
-timee = end - start#
-print("embedding invoke=",timee)#
+# parent_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
 
 
-start = time.time()#
+# vectorstore = Chroma(
+#     collection_name="relevants_documents", embedding_function=embedding
+# )
 
-res_invoke = retriever.invoke("Qui est Grimaud ?")
+# store = InMemoryStore()
+# retriever = ParentDocumentRetriever(
+#     vectorstore=vectorstore,
+#     docstore=store,
+#     child_splitter=child_splitter,
+#     parent_splitter=parent_splitter
+# )
 
-end = time.time()#
-timee = end - start#
-print("invoke()=",timee)#
+# retriever.add_documents(docs, ids=None)
+
+# end = time.time()#
+# timee = end - start#
+# print("embedding invoke=",timee)#
 
 
-start = time.time()#
+# start = time.time()#
+
+# res_invoke = retriever.invoke("Qui est Lyra ?")
+
+# end = time.time()#
+# timee = end - start#
+# print("invoke()=",timee)#
 
 
-system_instructions = """
-Vous êtes un assistant français. Votre but est de répondre aux questions à l'aide des Sources qu'on vous donnent.
-"""
+# start = time.time()#
 
-prompt_template = PromptTemplate(
-    template="{instructions}\n\nPrompt: {prompt}",
-    input_variables=["instructions", "prompt"],
-)
 
-prompt = "Qui est Grimaud ? Sources :"
-for r in res_invoke:
-    prompt += r.page_content
+# system_instructions = """
+# Vous êtes un assistant français. Votre but est de répondre aux questions à l'aide des Sources qu'on vous donnent.
+# """
 
-print(prompt)
+# prompt_template = PromptTemplate(
+#     template="{instructions}\n\nPrompt: {prompt}",
+#     input_variables=["instructions", "prompt"],
+# )
 
-full_prompt = prompt_template.format(instructions=system_instructions, prompt=prompt)
-response = llm_local.generate([full_prompt])
+# prompt = "Qui est Lyra ? Sources :"
+# for r in res_invoke:
+#     prompt += r.page_content
 
-end = time.time()#
-timee = end - start#
-print("Chargement modèle et génération réponse=",timee)#
+# print(prompt)
 
-print(response.generations[0][0].text)
+# full_prompt = prompt_template.format(instructions=system_instructions, prompt=prompt)
+# response = llm_local.generate([full_prompt])
+
+# end = time.time()#
+# timee = end - start#
+# print("Chargement modèle et génération réponse=",timee)#
+
+# print(response.generations[0][0].text)
