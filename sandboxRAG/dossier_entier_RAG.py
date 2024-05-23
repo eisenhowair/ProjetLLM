@@ -1,15 +1,8 @@
 import os
-import json
 import chainlit as cl
-from langchain.text_splitter import (
-    RecursiveCharacterTextSplitter,
-    CharacterTextSplitter,
-)
-from langchain_community.embeddings import HuggingFaceEmbeddings, OllamaEmbeddings
-from langchain_community.llms import Ollama
+from manip_documents import *
+
 from langchain_community.vectorstores import FAISS
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
 from langchain.schema.runnable.config import RunnableConfig
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -17,64 +10,21 @@ from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 from langchain.memory import ConversationBufferMemory
 
 from operator import itemgetter
-from PyPDF2 import PdfReader
 from typing import List
 
-# Configuration
-embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-index_path = "data/vectorstore/temp-index.faiss"
-
-model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
-
-# embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model)
-embeddings_OL = OllamaEmbeddings(
-    base_url="http://localhost:11434",
-    model="nomic-embed-text",
-    show_progress="true",
-    temperature=0,
-)
-
-# Global index variable
-faiss_index = None
+from chainlit.input_widget import TextInput
 
 
-def read_text_from_file(file_path: str) -> str:
-    """Function to read PDF and return text"""
-
-    if file_path.lower().endswith(".pdf"):
-        with open(file_path, "rb") as f:
-            reader = PdfReader(f)
-            metadata = reader.metadata
-            text = "\n".join(page.extract_text()
-                             or "" for page in reader.pages)
-            return text, metadata
-    elif file_path.lower().endswith(".txt"):
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            return f.read(), {}
-    elif file_path.lower().endswith(".json"):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.dumps(json.load(f)), {}
+@cl.password_auth_callback
+def auth_callback(username: str, password: str):
+    # Fetch the user matching username from your database
+    # and compare the hashed password with the value stored in the database
+    if (username, password) == ("elias", "elias"):
+        return cl.User(
+            identifier="Elias", metadata={"role": "admin", "provider": "credentials"}
+        )
     else:
-        raise ValueError(
-            "Unsupported file type. Please upload a .txt or .pdf file.")
-
-# Function to load documents individually
-
-
-def load_documents_from_directory(directory):
-    documents = []
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            if filename.lower().endswith((".txt", ".pdf", ".json")):
-                print("Traitement de ", filename)
-                file_path = os.path.join(root, filename)
-                try:
-                    text, metadata = read_text_from_file(file_path)
-                    documents.append(
-                        {"content": text, "source": file_path, "metadata": metadata})
-                except ValueError as e:
-                    print(f"Error processing {file_path}: {e}")
-    return documents
+        return None
 
 
 @cl.step(type="run", name="Mise en place du Runnable")
@@ -84,12 +34,15 @@ def setup_model():
         [
             (
                 "system",
-                """Ton rôle est de répondre en francais à cette question {question} de l'utilisateur en te basant **uniquement** sur le contexte fourni. 
+                """Instruction: Répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte suivant fourni. 
                 Si tu ne trouves pas la réponse dans le contexte, demande à l'utilisateur d'être plus précis au lieu de deviner. 
-                Voici le contexte nécessaire avec les sources :
-                {context}"""
+                Context:{context}"""
+
             ),
             MessagesPlaceholder(variable_name="history"),
+            ("human", "Question{question}"),
+
+            ("ai", """Réponse:""")
         ]
     )
 
@@ -108,7 +61,7 @@ def setup_model():
 @cl.step(type="retrieval", name="Context via similarity_search")
 def trouve_contexte(question):
     retriever = cl.user_session.get("retriever")
-    search_results = retriever.vectorstore.similarity_search(question, k=20)
+    search_results = retriever.vectorstore.similarity_search(question, k=10)
 
     # Utiliser un dictionnaire pour regrouper les chunks par source
     results_by_source = {}
@@ -118,9 +71,9 @@ def trouve_contexte(question):
             results_by_source[source] = []
         results_by_source[source].append(result)
 
-    # Limiter à 5 sources différentes et récupérer plusieurs chunks par source
-    relevant_sources = list(results_by_source.keys())[:5]
-    # Récupérer jusqu'à 5 chunks par source
+    # sources différentes
+    relevant_sources = list(results_by_source.keys())[:2]
+    # chunks par source
     relevant_results = [results_by_source[source][:10]
                         for source in relevant_sources]
 
@@ -140,36 +93,27 @@ def trouve_contexte(question):
 
 @cl.on_chat_start
 async def factory():
+    settings = await cl.ChatSettings(
+        [
+            TextInput(id="addDocuments", label="Précisez le chemin",
+                      initial="differents_textes/..."),
+        ]
+    ).send()
     cl.user_session.set(
         "memory", ConversationBufferMemory(return_messages=True))
 
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(index_path,
-                                       embeddings=embeddings_OL,
+                                       embeddings=embeddings,
                                        allow_dangerous_deserialization=True
                                        )
         print("Index chargé à partir du chemin existant.")
     else:
-        # Load all documents individually
-        documents = load_documents_from_directory("differents_textes")
-
-        # Initialize CharacterTextSplitter
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300, chunk_overlap=150)
-
-        # Split each document into chunks
-        chunks = []
-        for doc in documents:
-            splits = text_splitter.create_documents(
-                text_splitter.split_text(doc["content"]))
-            for split in splits:
-                split.metadata = {
-                    "source": doc["source"], **doc.get("metadata", {})}
-                chunks.append(split)
+        chunks = load_new_documents("differents_textes")
 
         vectorstore = FAISS.from_documents(
             documents=chunks,
-            embedding=embeddings_OL
+            embedding=embeddings
         )
 
         vectorstore.save_local(index_path)
@@ -196,3 +140,10 @@ async def main(message):
         await msg.stream_token(chunk)
 
     await msg.send()
+
+
+@cl.on_settings_update
+async def setup_agent(settings):
+    print("on_settings_update", settings)
+    add_documents(settings["addDocuments"])
+    print(str(settings["addDocuments"])+" bien ajouté à l'index")
