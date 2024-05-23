@@ -26,22 +26,26 @@ from PyPDF2 import PdfReader
 from typing import List
 
 
-llm_local = Ollama(base_url="http://localhost:11434", model="llama3:8b")
-embedding = OllamaEmbeddings(
-    base_url="http://localhost:11434", model="nomic-embed-text"
-)
+llm_local = Ollama(base_url="http://localhost:11434", model="llamama")
+# embedding = OllamaEmbeddings(
+#     base_url="http://localhost:11434", model="nomic-embed-text"
+# )
 
+embedding_model="hkunlp/instructor-large"
+embedding = HuggingFaceEmbeddings(model_name=embedding_model)
 
 
 # Load blog post
-loader = TextLoader("./liam.txt")
+loader = TextLoader("liam.txt")
 data = loader.load()
-loader = TextLoader("./emma.txt")
+loader = TextLoader("emma.txt")
 data2 = loader.load()
-loader = TextLoader("./ammamellen.txt")
+loader = TextLoader("ammamellen.txt")
 data3 = loader.load()
+loader = TextLoader("donnees_uni_test.txt")
+data4 = loader.load()
 
-docs = data + data2 + data3
+docs = data + data2 + data3 + data4
 
 
 
