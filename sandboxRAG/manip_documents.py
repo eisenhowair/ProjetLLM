@@ -81,9 +81,8 @@ def add_documents_to_index(vectorstore, new_documents):
         chunk_size=400, chunk_overlap=150)
     new_docs = []
 
-    # Assurez-vous que new_documents est une liste de contenu de document
     for doc in new_documents:
-        chunks = text_splitter.create_documents(doc.page_content)
+        chunks = text_splitter.create_documents(doc)
         new_docs.extend(chunks)
 
     vectorstore.add_documents(new_docs)
@@ -110,8 +109,8 @@ def add_documents(directory: str):
     retriever = cl.user_session.get("retriever")
     vectorstore = retriever.vectorstore
 
-    new_documents = load_new_documents(directory)
-    add_documents_to_index(vectorstore, new_documents)
+    new_documents = load_documents_from_directory(directory)
+    add_documents_to_index(vectorstore, directory)
 
     vectorstore.save_local(index_path)
     print("Nouveaux documents ajoutés et index mis à jour.")
