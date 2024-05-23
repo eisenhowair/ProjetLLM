@@ -12,6 +12,7 @@ from langchain.memory import ConversationBufferMemory
 from operator import itemgetter
 from typing import List
 
+
 from chainlit.input_widget import TextInput
 
 
@@ -27,6 +28,7 @@ def auth_callback(username: str, password: str):
         return None
 
 
+
 @cl.step(type="run", name="Mise en place du Runnable")
 def setup_model():
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
@@ -37,7 +39,6 @@ def setup_model():
                 """Instruction: Répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte suivant fourni. 
                 Si tu ne trouves pas la réponse dans le contexte, demande à l'utilisateur d'être plus précis au lieu de deviner. 
                 Context:{context}"""
-
             ),
             MessagesPlaceholder(variable_name="history"),
             ("human", "Question{question}"),
@@ -48,8 +49,7 @@ def setup_model():
 
     runnable_exercice = (
         RunnablePassthrough.assign(
-            history=RunnableLambda(
-                memory.load_memory_variables) | itemgetter("history")
+            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
         )
         | prompt_exercice
         | model
@@ -77,17 +77,21 @@ def trouve_contexte(question):
     relevant_results = [results_by_source[source][:10]
                         for source in relevant_sources]
 
+
     # Aplatir la liste des résultats
-    relevant_results = [
-        chunk for sublist in relevant_results for chunk in sublist]
+    relevant_results = [chunk for sublist in relevant_results for chunk in sublist]
 
     filenames = [result.metadata["source"] for result in relevant_results]
     short_filenames = [os.path.basename(file) for file in filenames]
     print("Files used for context:", short_filenames)
     context = "\n".join(
-        [f"-----\nSource: {os.path.basename(result.metadata['source'])}\n{result.page_content}" for result in relevant_results])
+        [
+            f"-----\nSource: {os.path.basename(result.metadata['source'])}\n{result.page_content}"
+            for result in relevant_results
+        ]
+    )
 
-    print("-------------------\n"+context)
+    print("-------------------\n" + context)
     return context
 
 
@@ -116,6 +120,7 @@ async def factory():
             embedding=embeddings
         )
 
+
         vectorstore.save_local(index_path)
         print("Nouvel index créé et sauvegardé.")
 
@@ -127,14 +132,13 @@ async def factory():
 async def main(message):
     memory = cl.user_session.get("memory")
     question = message.content
-    print("Question:"+question)
+    print("Question:" + question)
 
     # setup_model() et trouve_contexte() à adapter suivant ce qui est recherché
     runnable_model = setup_model()
     msg = cl.Message(content="")
     async for chunk in runnable_model.astream(
-        {"question": question,
-            "context": trouve_contexte(question)},
+        {"question": question, "context": trouve_contexte(question)},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         await msg.stream_token(chunk)
