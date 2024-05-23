@@ -28,6 +28,9 @@ https://github.com/vndee/local-rag-example (langchain)
 
 https://github.com/ollama/ollama/blob/main/docs/tutorials/langchainpy.md (langchain)
 
+https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.faiss.FAISS.html#langchain_community.vectorstores.faiss.FAISS.similarity_search 
+(type de similarity_search)
+
 ### Articles
 
 https://iamajithkumar.medium.com/working-with-faiss-for-similarity-search-59b197690f6c
