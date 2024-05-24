@@ -50,7 +50,9 @@ def modify_metadata_Walk_Egyptian(pdf_path):
     extract_metadata(pdf_path)
 
 
+"""
 modify_metadata_Peter_Pan("differents_textes/peter-pan.pdf")
 extract_metadata("differents_textes/Dumas_Les_trois_mousquetaires_1.pdf")
 modify_metadata_Walk_Egyptian(
     "differents_textes/Tully Walk like an Egyptian .pdf")
+"""

@@ -1,7 +1,7 @@
 import os
 import chainlit as cl
 from numpy import vectorize
-from manip_documents import *
+from utils.manip_documents import *
 
 from langchain_community.vectorstores import FAISS
 from langchain.schema.runnable.config import RunnableConfig

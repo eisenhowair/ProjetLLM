@@ -81,7 +81,7 @@ def charge_vectorstore(embedding, index_path):
         )
         print(f"Index chargé à partir du chemin existant: {index_path}")
     else:
-        documents = load_documents_from_directory("differents_textes")
+        documents = load_documents_from_directory("../differents_textes")
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=400, chunk_overlap=150
         )
@@ -165,7 +165,7 @@ def plot_usage(data, question):
     plt.tight_layout()
     plt.savefig(
         os.path.join(
-            "screenshot_compare_embedding", f"{question.replace(' ', '_')}.png"
+            "../screenshot_compare_embedding", f"{question.replace(' ', '_')}.png"
         )
     )
     plt.show()
