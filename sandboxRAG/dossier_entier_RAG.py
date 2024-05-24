@@ -1,7 +1,7 @@
 import os
 import chainlit as cl
 from numpy import vectorize
-from manip_documents import *
+from utils.manip_documents import *
 
 from langchain_community.vectorstores import FAISS
 from langchain.schema.runnable.config import RunnableConfig
@@ -103,9 +103,10 @@ async def factory():
             TextInput(id="addDocuments", label="Précisez le chemin",
                       initial="differents_textes/..."),
             Select(
-                id="langage",
-                label="Langue",
-                values=["anglais", "francais"],
+                id="model",
+                label="Model",
+                values=["instructor-xl", "instructor-base",
+                        "instructor-large", "mpnet-v2", "camembert-base"],
                 initial_index=0,
             ),
         ]
@@ -161,7 +162,7 @@ async def main(message):
 async def setup_agent(settings):
     print("on_settings_update", settings)
 
-    embeddings, index_path = change_language(settings["langage"])
+    embeddings, index_path = change_model(settings["model"])
     cl.user_session.set("embeddings", embeddings)
     cl.user_session.set("index_path", index_path)
 
