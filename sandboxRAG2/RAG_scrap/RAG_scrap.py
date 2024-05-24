@@ -29,6 +29,19 @@ from operator import itemgetter
 from PyPDF2 import PdfReader
 from typing import List
 
+import re
+import unicodedata
+
+
+def clean_text(text):
+    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    
+    text = re.sub(r'\s+', ' ', text)
+    
+    text = text.strip()
+    
+    return text
+
 
 urls = [
     "https://fr.wikipedia.org/wiki/Les_Trois_Mousquetaires",
@@ -36,17 +49,19 @@ urls = [
 
 docs = []
 
+start = time.time()
 for url in urls:
-    # Send an HTTP request to the URL of the webpage you want to access
     response = requests.get(url)
-
-
-    # Parse the HTML content using BeautifulSoup
     soup = BeautifulSoup(response.content, "html.parser")
-    # Extract the text content of the webpage
     text = soup.get_text()
+    text = clean_text(text)
     docs.append(Document(page_content=text, metadata={"source": url}))
 
+end = time.time()
+print("Scrap + clean text=",end - start)
+
+
+print(docs)
 
 
 llm_local = Ollama(base_url="http://localhost:11434", model="llamama")
@@ -60,7 +75,7 @@ embedding = HuggingFaceEmbeddings(model_name=embedding_model)
 
 @cl.on_chat_start
 async def factory():
-
+    start = time.time()
     cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
 
 
@@ -80,23 +95,29 @@ async def factory():
 
     retriever.add_documents(docs, ids=None)
 
-    
+    end = time.time()
+    print("factory=",end - start)
     cl.user_session.set("retriever", retriever)
+    
    
 
 
-@cl.step(type="retrieval", name="similarity search avec retriever")
-def res_sim_search(question):
-
+@cl.step(type="retrieval", name="invoke avec retriever")
+def r_invoke(question):
+    start = time.time()
     retriever = cl.user_session.get("retriever")
-
     res_invoke = retriever.invoke(question)
-    
+
+    end = time.time()
+    print("r_invoke=",end - start)
+
     return res_invoke
 
 
 @cl.step(type="run", name="Mise en place du Runnable")
 def setup_model():
+    start = time.time()
+
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
 
     prompt = ChatPromptTemplate.from_messages(
@@ -117,16 +138,20 @@ def setup_model():
         | llm_local
         | StrOutputParser()
     )
+
+    end = time.time()
+    print("setup model=",end - start)
+
     return runnable_exercice
 
 
 @cl.on_message
 async def main(message):
-
+    start = time.time()
     memory = cl.user_session.get("memory")
 
     runnable_model = setup_model()
-    res_invoke = res_sim_search(message.content)
+    res_invoke = r_invoke(message.content)
     prompt = message.content + " \nSources :"
     for r in res_invoke:
         prompt += r.page_content
@@ -141,5 +166,8 @@ async def main(message):
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         await msg.stream_token(chunk)
+
+    end = time.time()
+    print("main=",end - start)
 
     await msg.send()
