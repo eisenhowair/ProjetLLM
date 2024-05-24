@@ -1,3 +1,5 @@
+from chainlit.input_widget import TextInput, Select, Switch, Slider
+from typing import Optional
 from operator import itemgetter
 from langchain_community.llms import Ollama
 
@@ -25,7 +27,8 @@ def setup_runnable():
 
     runnable = (
         RunnablePassthrough.assign(
-            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
+            history=RunnableLambda(
+                memory.load_memory_variables) | itemgetter("history")
         )
         | prompt
         | model
@@ -34,14 +37,17 @@ def setup_runnable():
     cl.user_session.set("runnable", runnable)
 
 
+"""
 @cl.password_auth_callback
 def auth():
     return cl.User(identifier="test")
+"""
 
 
 @cl.on_chat_start
 async def on_chat_start():
-    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set(
+        "memory", ConversationBufferMemory(return_messages=True))
     setup_runnable()
 
 
@@ -79,11 +85,6 @@ async def on_message(message: cl.Message):
     memory.chat_memory.add_user_message(message.content)
     memory.chat_memory.add_ai_message(res.content)
 
-"""import chainlit as cl
-from chainlit.input_widget import TextInput,Select,Switch,Slider
-
-from typing import Optional
-
 
 @cl.set_chat_profiles
 async def chat_profile():
@@ -100,6 +101,7 @@ async def chat_profile():
         ),
     ]
 
+
 @cl.on_chat_start
 async def on_chat_start():
     chat_profile = cl.user_session.get("chat_profile")
@@ -108,31 +110,32 @@ async def on_chat_start():
     ).send()
 
 
-
 @cl.on_chat_start
 async def on_chat_start():
     cl.user_session.set("chat_history", [])
     cl.user_session.set("chat_history", [{"role": "system",
                         "content": "behave as if you are news reporter."}])
 
+
 @cl.on_message
 async def generate_response(query: cl.Message):
     chat_history = cl.user_session.get("chat_history")
     chat_history.append({"role": "user", "content": query.content})
-    
+
     response = cl.Message(content="")
     answer = 'ollama.chat(model="llama3:8b", messages=chat_history, stream=True)'
-    
+
     complete_answer = ""
     for token_dict in answer:
         token = token_dict["message"]["content"]
         complete_answer += token
         await response.stream_token(token)
-    
-    chat_history.append({"role": "assistant", "content": complete_answer})    
+
+    chat_history.append({"role": "assistant", "content": complete_answer})
     cl.user_session.set("chat_history", chat_history)
 
     await response.send()
+
 
 @cl.on_chat_start
 async def start():
@@ -142,7 +145,8 @@ async def start():
             Select(
                 id="Model",
                 label="OpenAI - Model",
-                values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"],
+                values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k",
+                        "gpt-4", "gpt-4-32k"],
                 initial_index=0,
             ),
             Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
@@ -157,7 +161,6 @@ async def start():
             ),
         ]
     ).send()
-
 
     res = await cl.AskActionMessage(
         content="Pick an action!",
@@ -187,6 +190,7 @@ async def start():
         elements=elements,
     ).send()
 
+
 @cl.on_settings_update
 async def setup_agent(settings):
-    print("on_settings_update", settings)"""
+    print("on_settings_update", settings)

@@ -11,26 +11,24 @@ from langchain_community.vectorstores import FAISS
 from PyPDF2 import PdfReader
 from typing import List
 
-from chainlit.input_widget import TextInput
 
-# Configuration
-embedding_model_hf = "sentence-transformers/all-mpnet-base-v2"
-index_OL_path = "data/vectorstore/temp-index.faiss"
-index_mpnet_path = "data/vectorstore/index_mpnet.faiss"
+from embedding_models import *
+
 
 model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
-embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model_hf)
+embeddings_HF = HuggingFaceEmbeddings(
+    model_name=embedding_model_hf_en_instructor)
 embeddings_OL = OllamaEmbeddings(
     base_url="http://localhost:11434",
-    model="nomic-embed-text",
+    model=embedding_model_ol_en_nomic,
     show_progress="true",
     temperature=0,
 )
 
 # on décide ici quel index et quel modèle utiliser
 embeddings = embeddings_HF
-index_path = index_mpnet_path
+index_path = index_en_path_instructor
 faiss_index = None
 
 
@@ -51,6 +49,21 @@ def load_new_documents(directory):
             chunks.append(split)
 
     return chunks
+
+
+def change_language(new_language):
+    # on change de modèle d'embedding pour en prendre un adapté à la langue
+
+    if new_language == "francais":
+        embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model_hf_fr)
+        index_path = index_fr_path_camembert
+
+    elif new_language == "anglais":
+        embeddings_HF = HuggingFaceEmbeddings(
+            model_name=embedding_model_hf_en_instructor)
+        index_path = index_en_path_instructor
+
+    return embeddings_HF, index_path
 
 
 def read_text_from_file(file_path: str) -> str:
@@ -109,7 +122,6 @@ def add_documents(directory: str):
     retriever = cl.user_session.get("retriever")
     vectorstore = retriever.vectorstore
 
-    new_documents = load_documents_from_directory(directory)
     add_documents_to_index(vectorstore, directory)
 
     vectorstore.save_local(index_path)
