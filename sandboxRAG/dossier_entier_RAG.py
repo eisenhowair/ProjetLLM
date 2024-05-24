@@ -1,5 +1,6 @@
 import os
 import chainlit as cl
+from numpy import vectorize
 from manip_documents import *
 
 from langchain_community.vectorstores import FAISS
@@ -13,20 +14,18 @@ from operator import itemgetter
 from typing import List
 
 
-from chainlit.input_widget import TextInput
+from chainlit.input_widget import TextInput, Select
 
 
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
-    # Fetch the user matching username from your database
-    # and compare the hashed password with the value stored in the database
+
     if (username, password) == ("elias", "elias"):
         return cl.User(
             identifier="Elias", metadata={"role": "admin", "provider": "credentials"}
         )
     else:
         return None
-
 
 
 @cl.step(type="run", name="Mise en place du Runnable")
@@ -36,12 +35,12 @@ def setup_model():
         [
             (
                 "system",
-                """Instruction: Répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte suivant fourni. 
-                Si tu ne trouves pas la réponse dans le contexte, demande à l'utilisateur d'être plus précis au lieu de deviner. 
+                """Instruction: Répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte suivant fourni.
+                Si tu ne trouves pas la réponse dans le contexte, demande à l'utilisateur d'être plus précis au lieu de deviner.
                 Context:{context}"""
             ),
             MessagesPlaceholder(variable_name="history"),
-            ("human", "Question{question}"),
+            ("human", "Question: {question}"),
 
             ("ai", """Réponse:""")
         ]
@@ -49,7 +48,8 @@ def setup_model():
 
     runnable_exercice = (
         RunnablePassthrough.assign(
-            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
+            history=RunnableLambda(
+                memory.load_memory_variables) | itemgetter("history")
         )
         | prompt_exercice
         | model
@@ -77,12 +77,13 @@ def trouve_contexte(question):
     relevant_results = [results_by_source[source][:10]
                         for source in relevant_sources]
 
-
     # Aplatir la liste des résultats
-    relevant_results = [chunk for sublist in relevant_results for chunk in sublist]
+    relevant_results = [
+        chunk for sublist in relevant_results for chunk in sublist]
 
     filenames = [result.metadata["source"] for result in relevant_results]
     short_filenames = [os.path.basename(file) for file in filenames]
+    print("modèle d'embedding:"+str(embeddings))
     print("Files used for context:", short_filenames)
     context = "\n".join(
         [
@@ -101,11 +102,22 @@ async def factory():
         [
             TextInput(id="addDocuments", label="Précisez le chemin",
                       initial="differents_textes/..."),
+            Select(
+                id="langage",
+                label="Langue",
+                values=["anglais", "francais"],
+                initial_index=0,
+            ),
         ]
     ).send()
     cl.user_session.set(
         "memory", ConversationBufferMemory(return_messages=True))
 
+    charge_index(index_path)
+
+
+def charge_index(index_path):
+    print(f"index_path: {index_path}\nembeddings:{embeddings}")
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(index_path,
                                        embeddings=embeddings,
@@ -119,7 +131,6 @@ async def factory():
             documents=chunks,
             embedding=embeddings
         )
-
 
         vectorstore.save_local(index_path)
         print("Nouvel index créé et sauvegardé.")
@@ -149,5 +160,10 @@ async def main(message):
 @cl.on_settings_update
 async def setup_agent(settings):
     print("on_settings_update", settings)
-    add_documents(settings["addDocuments"])
-    print(str(settings["addDocuments"])+" bien ajouté à l'index")
+
+    embeddings, index_path = change_language(settings["langage"])
+    cl.user_session.set("embeddings", embeddings)
+    cl.user_session.set("index_path", index_path)
+
+    # add_documents(settings["addDocuments"])
+    # print(str(settings["addDocuments"])+" bien ajouté à l'index")

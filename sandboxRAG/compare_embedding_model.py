@@ -7,14 +7,18 @@ from langchain_community.embeddings import HuggingFaceEmbeddings, OllamaEmbeddin
 from langchain_community.vectorstores import FAISS
 from PyPDF2 import PdfReader
 
+from embedding_models import *
 
 # Function to read PDF and return text
+
+
 def read_text_from_file(file_path: str) -> str:
     if file_path.lower().endswith(".pdf"):
         with open(file_path, "rb") as f:
             reader = PdfReader(f)
             metadata = reader.metadata
-            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            text = "\n".join(page.extract_text()
+                             or "" for page in reader.pages)
             return text, metadata
     elif file_path.lower().endswith(".txt"):
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
@@ -23,7 +27,8 @@ def read_text_from_file(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.dumps(json.load(f)), {}
     else:
-        raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
+        raise ValueError(
+            "Unsupported file type. Please upload a .txt or .pdf file.")
 
 
 # Function to load documents individually
@@ -57,23 +62,22 @@ ollama_embeddings = OllamaEmbeddings(
 distilbert_embeddings = HuggingFaceEmbeddings(
     model_name="distilbert-base-nli-stsb-mean-tokens"
 )
-instructor_embeddings = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large")
-
-# New embedding configuration
-model_name = "sentence-transformers/all-mpnet-base-v2"
-model_kwargs = {"device": "cpu"}
-encode_kwargs = {"normalize_embeddings": False}
+instructor_embeddings = HuggingFaceEmbeddings(
+    model_name="hkunlp/instructor-large")
+camembert_embeddings = HuggingFaceEmbeddings(
+    model_name="dangvantuan/sentence-camembert-base"
+)
 mpnet_embeddings = HuggingFaceEmbeddings(
-    model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
+    model_name="sentence-transformers/all-mpnet-base-v2", model_kwargs={"device": "cpu"}, encode_kwargs={"normalize_embeddings": False}
 )
 
 
 def charge_vectorstore(embedding, index_path):
-    index_path += "differents_textes/"
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(
             index_path,
             embeddings=embedding,
+            allow_dangerous_deserialization=True
         )
         print(f"Index chargé à partir du chemin existant: {index_path}")
     else:
@@ -87,9 +91,11 @@ def charge_vectorstore(embedding, index_path):
                 text_splitter.split_text(doc["content"])
             )
             for split in splits:
-                split.metadata = {"source": doc["source"], **doc.get("metadata", {})}
+                split.metadata = {
+                    "source": doc["source"], **doc.get("metadata", {})}
                 chunks.append(split)
-        vectorstore = FAISS.from_documents(documents=chunks, embedding=embedding)
+        vectorstore = FAISS.from_documents(
+            documents=chunks, embedding=embedding)
         vectorstore.save_local(index_path)
         print(f"Nouvel index créé et sauvegardé: {index_path}")
     return vectorstore
@@ -116,9 +122,7 @@ def test_retrieval(question, path_vectorstore, embedding, model_name):
         ]
     )
 
-    print(
-        f"---------\nContext for question '{question}' using {model_name}:\n{context}"
-    )
+    # print(        f"---------\nContext for question '{question}' using {model_name}:\n{context}"    )
     print(f"File usage count for {model_name}:")
     for source, count in source_count.items():
         print(f"{os.path.basename(source)}: {count} times")
@@ -148,7 +152,8 @@ def plot_usage(data, question):
     fig, ax = plt.subplots(figsize=(14, 8))
     x = range(len(models))
     for i, source in enumerate(all_sources):
-        ax.bar(x, [usage_matrix[i][j] for j in x], label=os.path.basename(source))
+        ax.bar(x, [usage_matrix[i][j]
+               for j in x], label=os.path.basename(source))
 
     ax.set_xlabel("Models")
     ax.set_ylabel("Number of times source used")
@@ -175,20 +180,20 @@ usage_data = {}
 print("Using HuggingFace Embeddings (all-MiniLM-L6-v2):")
 usage_data["all-MiniLM-L6-v2"] = test_retrieval(
     question,
-    "HF_vectorstore",
+    "vectorstores/HF_vectorstore",
     hf_embeddings,
     "HuggingFace Embeddings (all-MiniLM-L6-v2)",
 )
 
 print("\nUsing Ollama Embeddings:")
 usage_data["nomic-embed-text"] = test_retrieval(
-    question, "OL_vectorstore", ollama_embeddings, "Ollama Embeddings"
+    question, index_en_path_OL, ollama_embeddings, "Ollama Embeddings"
 )
 
 print("\nUsing DistilBERT Embeddings (distilbert-base-nli-stsb-mean-tokens):")
 usage_data["distilbert-base-nli-stsb-mean-tokens"] = test_retrieval(
     question,
-    "DistilBERT_vectorstore",
+    "vectorstores/DistilBERT_vectorstore",
     distilbert_embeddings,
     "DistilBERT Embeddings (distilbert-base-nli-stsb-mean-tokens)",
 )
@@ -196,7 +201,7 @@ usage_data["distilbert-base-nli-stsb-mean-tokens"] = test_retrieval(
 print("\nUsing Instructor Embeddings (hkunlp/instructor-large):")
 usage_data["hkunlp/instructor-large"] = test_retrieval(
     question,
-    "Instructor_vectorstore",
+    index_en_path_instructor,
     instructor_embeddings,
     "Instructor Embeddings (hkunlp/instructor-large)",
 )
@@ -204,9 +209,17 @@ usage_data["hkunlp/instructor-large"] = test_retrieval(
 print("\nUsing MPNet Embeddings (sentence-transformers/all-mpnet-base-v2):")
 usage_data["sentence-transformers/all-mpnet-base-v2"] = test_retrieval(
     question,
-    "MPNet_vectorstore",
+    index_en_path_mpnet,
     mpnet_embeddings,
     "MPNet Embeddings (sentence-transformers/all-mpnet-base-v2)",
+)
+
+print("\nUsing Camembert Embeddings (dangvantuan/sentence-camembert-base):")
+usage_data["dangvantuan/sentence-camembert-base"] = test_retrieval(
+    question,
+    index_fr_path_camembert,
+    mpnet_embeddings,
+    "Camembert Embeddings (dangvantuan/sentence-camembert-base)",
 )
 
 # Plot usage data
