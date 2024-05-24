@@ -37,19 +37,17 @@ def setup_model():
                 "system",
                 """Instruction: Répondre en francais à la question de l'utilisateur en te basant **uniquement** sur le contexte suivant fourni.
                 Si tu ne trouves pas la réponse dans le contexte, demande à l'utilisateur d'être plus précis au lieu de deviner.
-                Context:{context}"""
+                Context:{context}""",
             ),
             MessagesPlaceholder(variable_name="history"),
             ("human", "Question: {question}"),
-
-            ("ai", """Réponse:""")
+            ("ai", """Réponse:"""),
         ]
     )
 
     runnable_exercice = (
         RunnablePassthrough.assign(
-            history=RunnableLambda(
-                memory.load_memory_variables) | itemgetter("history")
+            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
         )
         | prompt_exercice
         | model
@@ -74,16 +72,14 @@ def trouve_contexte(question):
     # sources différentes
     relevant_sources = list(results_by_source.keys())[:2]
     # chunks par source
-    relevant_results = [results_by_source[source][:10]
-                        for source in relevant_sources]
+    relevant_results = [results_by_source[source][:10] for source in relevant_sources]
 
     # Aplatir la liste des résultats
-    relevant_results = [
-        chunk for sublist in relevant_results for chunk in sublist]
+    relevant_results = [chunk for sublist in relevant_results for chunk in sublist]
 
     filenames = [result.metadata["source"] for result in relevant_results]
     short_filenames = [os.path.basename(file) for file in filenames]
-    print("modèle d'embedding:"+str(embeddings))
+    print("modèle d'embedding:" + str(embeddings))
     print("Files used for context:", short_filenames)
     context = "\n".join(
         [
@@ -100,19 +96,26 @@ def trouve_contexte(question):
 async def factory():
     settings = await cl.ChatSettings(
         [
-            TextInput(id="addDocuments", label="Précisez le chemin",
-                      initial="differents_textes/..."),
+            TextInput(
+                id="addDocuments",
+                label="Précisez le chemin",
+                initial="differents_textes/...",
+            ),
             Select(
                 id="model",
                 label="Model",
-                values=["instructor-xl", "instructor-base",
-                        "instructor-large", "mpnet-v2", "camembert-base"],
+                values=[
+                    "instructor-xl",
+                    "instructor-base",
+                    "instructor-large",
+                    "mpnet-v2",
+                    "camembert-base",
+                ],
                 initial_index=0,
             ),
         ]
     ).send()
-    cl.user_session.set(
-        "memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
 
     charge_index(index_path)
 
@@ -120,18 +123,14 @@ async def factory():
 def charge_index(index_path):
     print(f"index_path: {index_path}\nembeddings:{embeddings}")
     if os.path.exists(index_path):
-        vectorstore = FAISS.load_local(index_path,
-                                       embeddings=embeddings,
-                                       allow_dangerous_deserialization=True
-                                       )
+        vectorstore = FAISS.load_local(
+            index_path, embeddings=embeddings, allow_dangerous_deserialization=True
+        )
         print("Index chargé à partir du chemin existant.")
     else:
         chunks = load_new_documents("differents_textes")
 
-        vectorstore = FAISS.from_documents(
-            documents=chunks,
-            embedding=embeddings
-        )
+        vectorstore = FAISS.from_documents(documents=chunks, embedding=embeddings)
 
         vectorstore.save_local(index_path)
         print("Nouvel index créé et sauvegardé.")

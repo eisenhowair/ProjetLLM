@@ -15,8 +15,7 @@ def read_text_from_file(file_path: str) -> str:
         with open(file_path, "rb") as f:
             reader = PdfReader(f)
             metadata = reader.metadata
-            text = "\n".join(page.extract_text()
-                             or "" for page in reader.pages)
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
             return text, metadata
     elif file_path.lower().endswith(".txt"):
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
@@ -25,8 +24,7 @@ def read_text_from_file(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.dumps(json.load(f)), {}
     else:
-        raise ValueError(
-            "Unsupported file type. Please upload a .txt or .pdf file.")
+        raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
 
 
 # Function to load documents individually
@@ -60,24 +58,25 @@ ollama_embeddings = OllamaEmbeddings(
 distilbert_embeddings = HuggingFaceEmbeddings(
     model_name="distilbert-base-nli-stsb-mean-tokens"
 )
-instructor_embeddings = HuggingFaceEmbeddings(
-    model_name="hkunlp/instructor-large")
+instructor_embeddings = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large")
 camembert_embeddings = HuggingFaceEmbeddings(
     model_name="dangvantuan/sentence-camembert-base"
 )
 mpnet_embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-mpnet-base-v2", model_kwargs={"device": "cpu"}, encode_kwargs={"normalize_embeddings": False}
+    model_name="sentence-transformers/all-mpnet-base-v2",
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": False},
 )
 
 
 def charge_vectorstore(embedding, index_path):
     # pour se mettre au niveau du répertoire au dessus contenant les vectorstores
-    index_path = "../"+str(index_path)
+    index_path = "../" + str(index_path)
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(
             index_path,
             embeddings=embedding,
-            allow_dangerous_deserialization=True
+            # allow_dangerous_deserialization=True
         )
         print(f"Index chargé à partir du chemin existant: {index_path}")
     else:
@@ -91,11 +90,9 @@ def charge_vectorstore(embedding, index_path):
                 text_splitter.split_text(doc["content"])
             )
             for split in splits:
-                split.metadata = {
-                    "source": doc["source"], **doc.get("metadata", {})}
+                split.metadata = {"source": doc["source"], **doc.get("metadata", {})}
                 chunks.append(split)
-        vectorstore = FAISS.from_documents(
-            documents=chunks, embedding=embedding)
+        vectorstore = FAISS.from_documents(documents=chunks, embedding=embedding)
         vectorstore.save_local(index_path)
         print(f"Nouvel index créé et sauvegardé: {index_path}")
     return vectorstore
@@ -152,8 +149,7 @@ def plot_usage(data, question):
     fig, ax = plt.subplots(figsize=(14, 8))
     x = range(len(models))
     for i, source in enumerate(all_sources):
-        ax.bar(x, [usage_matrix[i][j]
-               for j in x], label=os.path.basename(source))
+        ax.bar(x, [usage_matrix[i][j] for j in x], label=os.path.basename(source))
 
     ax.set_xlabel("Models")
     ax.set_ylabel("Number of times source used")
@@ -184,12 +180,12 @@ usage_data["all-MiniLM-L6-v2"] = test_retrieval(
     hf_embeddings,
     "HuggingFace Embeddings (all-MiniLM-L6-v2)",
 )
-"""
+
 print("\nUsing Ollama Embeddings:")
 usage_data["nomic-embed-text"] = test_retrieval(
     question, index_en_path_OL, ollama_embeddings, "Ollama Embeddings"
 )
-"""
+
 
 print("\nUsing DistilBERT Embeddings (distilbert-base-nli-stsb-mean-tokens):")
 usage_data["distilbert-base-nli-stsb-mean-tokens"] = test_retrieval(
@@ -206,7 +202,7 @@ usage_data["hkunlp/instructor-base"] = test_retrieval(
     HuggingFaceEmbeddings(model_name=embedding_model_hf_en_instructor_base),
     "Instructor Embeddings (hkunlp/instructor-base)",
 )
-
+"""
 print("\nUsing Instructor xl Embeddings (hkunlp/instructor-xl):")
 usage_data["hkunlp/instructor-xl"] = test_retrieval(
     question,
@@ -214,7 +210,7 @@ usage_data["hkunlp/instructor-xl"] = test_retrieval(
     HuggingFaceEmbeddings(model_name=embedding_model_hf_en_instructor_xl),
     "Instructor Embeddings (hkunlp/instructor-xl)",
 )
-
+"""
 print("\nUsing Instructor Embeddings (hkunlp/instructor-large):")
 usage_data["hkunlp/instructor-large"] = test_retrieval(
     question,
