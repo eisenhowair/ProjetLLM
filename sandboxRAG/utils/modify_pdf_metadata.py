@@ -9,7 +9,7 @@ def extract_metadata(pdf_path):
     with open(pdf_path, "rb") as f:
         reader = PdfReader(f)
         metadata = reader.metadata
-        print(str(metadata)+"\n")
+        print(str(metadata) + "\n")
 
 
 def modify_metadata_Peter_Pan(pdf_path):
