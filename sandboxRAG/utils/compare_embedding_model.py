@@ -9,8 +9,6 @@ from PyPDF2 import PdfReader
 
 from embedding_models import *
 
-# Function to read PDF and return text
-
 
 def read_text_from_file(file_path: str) -> str:
     if file_path.lower().endswith(".pdf"):
@@ -73,6 +71,8 @@ mpnet_embeddings = HuggingFaceEmbeddings(
 
 
 def charge_vectorstore(embedding, index_path):
+    # pour se mettre au niveau du répertoire au dessus contenant les vectorstores
+    index_path = "../"+str(index_path)
     if os.path.exists(index_path):
         vectorstore = FAISS.load_local(
             index_path,
@@ -184,11 +184,12 @@ usage_data["all-MiniLM-L6-v2"] = test_retrieval(
     hf_embeddings,
     "HuggingFace Embeddings (all-MiniLM-L6-v2)",
 )
-
+"""
 print("\nUsing Ollama Embeddings:")
 usage_data["nomic-embed-text"] = test_retrieval(
     question, index_en_path_OL, ollama_embeddings, "Ollama Embeddings"
 )
+"""
 
 print("\nUsing DistilBERT Embeddings (distilbert-base-nli-stsb-mean-tokens):")
 usage_data["distilbert-base-nli-stsb-mean-tokens"] = test_retrieval(
@@ -198,10 +199,26 @@ usage_data["distilbert-base-nli-stsb-mean-tokens"] = test_retrieval(
     "DistilBERT Embeddings (distilbert-base-nli-stsb-mean-tokens)",
 )
 
+print("\nUsing Instructor Base Embeddings (hkunlp/instructor-base):")
+usage_data["hkunlp/instructor-base"] = test_retrieval(
+    question,
+    index_en_path_instructor_base,
+    HuggingFaceEmbeddings(model_name=embedding_model_hf_en_instructor_base),
+    "Instructor Embeddings (hkunlp/instructor-base)",
+)
+
+print("\nUsing Instructor xl Embeddings (hkunlp/instructor-xl):")
+usage_data["hkunlp/instructor-xl"] = test_retrieval(
+    question,
+    index_en_path_instructor_xl,
+    HuggingFaceEmbeddings(model_name=embedding_model_hf_en_instructor_xl),
+    "Instructor Embeddings (hkunlp/instructor-xl)",
+)
+
 print("\nUsing Instructor Embeddings (hkunlp/instructor-large):")
 usage_data["hkunlp/instructor-large"] = test_retrieval(
     question,
-    index_en_path_instructor,
+    index_en_path_instructor_large,
     instructor_embeddings,
     "Instructor Embeddings (hkunlp/instructor-large)",
 )

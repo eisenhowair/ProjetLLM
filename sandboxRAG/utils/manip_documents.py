@@ -18,7 +18,7 @@ from embedding_models import *
 model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
 embeddings_HF = HuggingFaceEmbeddings(
-    model_name=embedding_model_hf_en_instructor)
+    model_name=embedding_model_hf_en_instructor_large)
 embeddings_OL = OllamaEmbeddings(
     base_url="http://localhost:11434",
     model=embedding_model_ol_en_nomic,
@@ -28,7 +28,7 @@ embeddings_OL = OllamaEmbeddings(
 
 # on décide ici quel index et quel modèle utiliser
 embeddings = embeddings_HF
-index_path = index_en_path_instructor
+index_path = index_en_path_instructor_large
 faiss_index = None
 
 
@@ -51,17 +51,33 @@ def load_new_documents(directory):
     return chunks
 
 
-def change_language(new_language):
+def change_model(new_model):
     # on change de modèle d'embedding pour en prendre un adapté à la langue
 
-    if new_language == "francais":
-        embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model_hf_fr)
-        index_path = index_fr_path_camembert
-
-    elif new_language == "anglais":
+    if new_model == "instructor-large":
         embeddings_HF = HuggingFaceEmbeddings(
-            model_name=embedding_model_hf_en_instructor)
-        index_path = index_en_path_instructor
+            model_name=embedding_model_hf_en_instructor_large)
+        index_path = index_en_path_instructor_large
+
+    elif new_model == "instructor-xl":
+        embeddings_HF = HuggingFaceEmbeddings(
+            model_name=embedding_model_hf_en_instructor_xl)
+        index_path = index_en_path_instructor_xl
+
+    elif new_model == "instructor-base":
+        embeddings_HF = HuggingFaceEmbeddings(
+            model_name=embedding_model_hf_en_instructor_base)
+        index_path = index_en_path_instructor_base
+
+    elif new_model == "mpnet-v2":
+        embeddings_HF = HuggingFaceEmbeddings(
+            model_name=embedding_model_hf_en_mpnet)
+        index_path = index_en_path_mpnet
+
+    elif new_model == "camembert-base":
+        embeddings_HF = HuggingFaceEmbeddings(
+            model_name=embedding_model_hf_fr)
+        index_path = index_fr_path_camembert
 
     return embeddings_HF, index_path
 
