@@ -35,19 +35,23 @@ index_path = index_en_path_instructor_large
 faiss_index = None
 
 
-def process_document(doc: Dict) -> List[Document]:
+def add_files_to_index(index_path, embeddings, file_path):
+    if not os.path.exists(index_path):
+        raise ValueError(f"L'index {index_path} n'existe pas. Veuillez le créer avant d'ajouter de nouveaux documents.")
+    
+    # Charger l'index existant
+    vectorstore = FAISS.load_local(index_path, embeddings=embeddings, allow_dangerous_deserialization=True)
+    
+    # Initialiser le text splitter
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=150)
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=400, chunk_overlap=150)
-    chunks = []
-    splits = text_splitter.create_documents(
-        text_splitter.split_text(doc["content"])
-    )
-    for split in splits:
-        split.metadata = {
-            "source": doc["source"], **doc.get("metadata", {})}
-        chunks.append(split)
-    return chunks
+    text, metadata = read_text_from_file(file_path)
+    document = Document(page_content=text, metadata=metadata)  
+    chunks = text_splitter.split_documents([document])   
+    vectorstore.add_documents(chunks)
+    
+    vectorstore.save_local(index_path)
+    print("Les nouveaux documents ont été ajoutés à l'index et l'index a été sauvegardé.")
 
 
 # utilisé
@@ -70,6 +74,48 @@ def load_new_documents(directory: str) -> List[Document]:
             split.metadata = {"source": doc["source"], **doc.get("metadata", {})}
             chunks.append(split)
     return chunks
+
+
+
+def read_text_from_file(file_path: str) -> str:
+    """Function to read PDF and return text"""
+
+    if file_path.lower().endswith(".pdf"):
+        with open(file_path, "rb") as f:
+            reader = PdfReader(f)
+            metadata = reader.metadata
+            text = "\n".join(page.extract_text()
+                             or "" for page in reader.pages)
+            return text, metadata
+    elif file_path.lower().endswith(".txt"):
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            return f.read(), {}
+    elif file_path.lower().endswith(".json"):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.dumps(json.load(f)), {}
+    else:
+        raise ValueError(
+            "Unsupported file type. Please upload a .txt or .pdf file.")
+
+
+# Function to load documents individually
+
+
+def load_documents_from_directory(directory):
+    documents = []
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            if filename.lower().endswith((".txt", ".pdf", ".json")):
+                print("Traitement de ", filename)
+                file_path = os.path.join(root, filename)
+                try:
+                    text, metadata = read_text_from_file(file_path)
+                    documents.append(
+                        {"content": text, "source": file_path, "metadata": metadata}
+                    )
+                except ValueError as e:
+                    print(f"Error processing {file_path}: {e}")
+    return documents
 
 def change_model(new_model):
     # on change de modèle d'embedding pour en prendre un plus adapté
@@ -103,31 +149,8 @@ def change_model(new_model):
 
     return embeddings_HF, index_path
 
-
-def read_text_from_file(file_path: str) -> str:
-    """Function to read PDF and return text"""
-
-    if file_path.lower().endswith(".pdf"):
-        with open(file_path, "rb") as f:
-            reader = PdfReader(f)
-            metadata = reader.metadata
-            text = "\n".join(page.extract_text()
-                             or "" for page in reader.pages)
-            return text, metadata
-    elif file_path.lower().endswith(".txt"):
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            return f.read(), {}
-    elif file_path.lower().endswith(".json"):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.dumps(json.load(f)), {}
-    else:
-        raise ValueError(
-            "Unsupported file type. Please upload a .txt or .pdf file.")
-
-
-# Function to load documents individually
-
 """
+
 def add_documents_to_index(vectorstore, new_documents):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=400, chunk_overlap=150)
@@ -139,25 +162,7 @@ def add_documents_to_index(vectorstore, new_documents):
 
     vectorstore.add_documents(new_docs)
     vectorstore.save_local(index_path)
-"""
 
-def load_documents_from_directory(directory):
-    documents = []
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            if filename.lower().endswith((".txt", ".pdf", ".json")):
-                print("Traitement de ", filename)
-                file_path = os.path.join(root, filename)
-                try:
-                    text, metadata = read_text_from_file(file_path)
-                    documents.append(
-                        {"content": text, "source": file_path, "metadata": metadata}
-                    )
-                except ValueError as e:
-                    print(f"Error processing {file_path}: {e}")
-    return documents
-
-"""
 def add_documents(directory: str):
     retriever = cl.user_session.get("retriever")
     vectorstore = retriever.vectorstore
