@@ -125,7 +125,7 @@ async def factory():
 
 
 def charge_index(new_index_path, new_embeddings, new_document=None):
-    print(f"index_path: {new_index_path}\nembeddings:{new_embeddings}")
+    #print(f"index_path: {new_index_path}\nembeddings:{new_embeddings}")
     if os.path.exists(new_index_path):
         vectorstore = FAISS.load_local(
             new_index_path, embeddings=new_embeddings, allow_dangerous_deserialization=True
@@ -141,10 +141,6 @@ def charge_index(new_index_path, new_embeddings, new_document=None):
         vectorstore.save_local(new_index_path)
         print("Nouvel index créé et sauvegardé.")
 
-    if new_document:
-        print("nouveau document ajouté à l'index")
-        new_chunks = process_document(read_text_from_file(new_document))
-        vectorstore.add_documents(documents=new_chunks)
     print(f"Type d'index: {vectorstore.index}")
     retriever = vectorstore.as_retriever()
     cl.user_session.set("retriever", retriever)
@@ -175,6 +171,4 @@ async def setup_agent(settings):
     embeddings_t, index_path_t = change_model(settings["model"])
     charge_index(index_path_t, embeddings_t, settings["addDocuments"])
     cl.user_session.set("nom_model", settings["model"])
-
-    # add_documents(settings["addDocuments"])
-    # print(str(settings["addDocuments"])+" bien ajouté à l'index")
+    add_files_to_index(index_path_t, embeddings_t, settings["addDocuments"])
