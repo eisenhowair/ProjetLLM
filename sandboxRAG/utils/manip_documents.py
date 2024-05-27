@@ -50,14 +50,26 @@ def process_document(doc: Dict) -> List[Document]:
     return chunks
 
 
+# utilisé
 def load_new_documents(directory: str) -> List[Document]:
 
-    documents = load_documents_from_directory(directory)
-    all_chunks = []
-    for doc in documents:
-        all_chunks.extend(process_document(doc))
-    return all_chunks
+    documents = load_documents_from_directory(directory=directory)
 
+    # Initialize CharacterTextSplitter
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=300, chunk_overlap=150
+    )
+
+        # Split each document into chunks
+    chunks = []
+    for doc in documents:
+        splits = text_splitter.create_documents(
+            text_splitter.split_text(doc["content"])
+        )
+        for split in splits:
+            split.metadata = {"source": doc["source"], **doc.get("metadata", {})}
+            chunks.append(split)
+    return chunks
 
 def change_model(new_model):
     # on change de modèle d'embedding pour en prendre un plus adapté
@@ -115,7 +127,7 @@ def read_text_from_file(file_path: str) -> str:
 
 # Function to load documents individually
 
-
+"""
 def add_documents_to_index(vectorstore, new_documents):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=400, chunk_overlap=150)
@@ -127,7 +139,7 @@ def add_documents_to_index(vectorstore, new_documents):
 
     vectorstore.add_documents(new_docs)
     vectorstore.save_local(index_path)
-
+"""
 
 def load_documents_from_directory(directory):
     documents = []
@@ -145,7 +157,7 @@ def load_documents_from_directory(directory):
                     print(f"Error processing {file_path}: {e}")
     return documents
 
-
+"""
 def add_documents(directory: str):
     retriever = cl.user_session.get("retriever")
     vectorstore = retriever.vectorstore
@@ -154,3 +166,4 @@ def add_documents(directory: str):
 
     vectorstore.save_local(index_path)
     print("Nouveaux documents ajoutés et index mis à jour.")
+"""
