@@ -1,3 +1,6 @@
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
+from typing import List, Dict
 import os
 import json
 import chainlit as cl
@@ -32,27 +35,32 @@ index_path = index_en_path_instructor_large
 faiss_index = None
 
 
-def load_new_documents(directory):
-    documents = load_documents_from_directory(directory)
+def process_document(doc: Dict) -> List[Document]:
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=400, chunk_overlap=150)
-
     chunks = []
-    for doc in documents:
-        splits = text_splitter.create_documents(
-            text_splitter.split_text(doc["content"])
-        )
-        for split in splits:
-            split.metadata = {
-                "source": doc["source"], **doc.get("metadata", {})}
-            chunks.append(split)
-
+    splits = text_splitter.create_documents(
+        text_splitter.split_text(doc["content"])
+    )
+    for split in splits:
+        split.metadata = {
+            "source": doc["source"], **doc.get("metadata", {})}
+        chunks.append(split)
     return chunks
 
 
+def load_new_documents(directory: str) -> List[Document]:
+
+    documents = load_documents_from_directory(directory)
+    all_chunks = []
+    for doc in documents:
+        all_chunks.extend(process_document(doc))
+    return all_chunks
+
+
 def change_model(new_model):
-    # on change de modèle d'embedding pour en prendre un adapté à la langue
+    # on change de modèle d'embedding pour en prendre un plus adapté
 
     if new_model == "instructor-large":
         embeddings_HF = HuggingFaceEmbeddings(
