@@ -102,7 +102,7 @@ async def factory():
             TextInput(
                 id="addDocuments",
                 label="Précisez le chemin",
-                initial="differents_textes/...",
+                placeholder="differents_textes/...",
             ),
             Select(
                 id="model",
@@ -124,7 +124,7 @@ async def factory():
     charge_index(index_path, embeddings)
 
 
-def charge_index(new_index_path, new_embeddings):
+def charge_index(new_index_path, new_embeddings, new_document=None):
     print(f"index_path: {new_index_path}\nembeddings:{new_embeddings}")
     if os.path.exists(new_index_path):
         vectorstore = FAISS.load_local(
@@ -134,12 +134,15 @@ def charge_index(new_index_path, new_embeddings):
     else:
         chunks = load_new_documents("differents_textes")
 
+        # potientiellement enlever l'argument index_factory
         vectorstore = FAISS.from_documents(
-            documents=chunks, embedding=new_embeddings)
+            documents=chunks, embedding=new_embeddings, index_factory="HNSW")
 
         vectorstore.save_local(new_index_path)
         print("Nouvel index créé et sauvegardé.")
 
+    if new_document:
+        vectorstore.add_documents()
     print(f"Type d'index: {vectorstore.index}")
     retriever = vectorstore.as_retriever()
     cl.user_session.set("retriever", retriever)
@@ -168,7 +171,7 @@ async def setup_agent(settings):
     print("on_settings_update", settings)
 
     embeddings_t, index_path_t = change_model(settings["model"])
-    charge_index(index_path_t, embeddings_t)
+    charge_index(index_path_t, embeddings_t, settings["addDocuments"])
     cl.user_session.set("nom_model", settings["model"])
 
     # add_documents(settings["addDocuments"])
