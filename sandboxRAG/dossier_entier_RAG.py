@@ -136,13 +136,15 @@ def charge_index(new_index_path, new_embeddings, new_document=None):
 
         # potientiellement enlever l'argument index_factory
         vectorstore = FAISS.from_documents(
-            documents=chunks, embedding=new_embeddings, index_factory="HNSW")
+            documents=chunks, embedding=new_embeddings)
 
         vectorstore.save_local(new_index_path)
         print("Nouvel index créé et sauvegardé.")
 
     if new_document:
-        vectorstore.add_documents()
+        print("nouveau document ajouté à l'index")
+        new_chunks = process_document(read_text_from_file(new_document))
+        vectorstore.add_documents(documents=new_chunks)
     print(f"Type d'index: {vectorstore.index}")
     retriever = vectorstore.as_retriever()
     cl.user_session.set("retriever", retriever)
