@@ -47,7 +47,8 @@ def setup_model():
 
     runnable_exercice = (
         RunnablePassthrough.assign(
-            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
+            history=RunnableLambda(
+                memory.load_memory_variables) | itemgetter("history")
         )
         | prompt_exercice
         | model
@@ -72,10 +73,12 @@ def trouve_contexte(question):
     # sources différentes
     relevant_sources = list(results_by_source.keys())[:2]
     # chunks par source
-    relevant_results = [results_by_source[source][:10] for source in relevant_sources]
+    relevant_results = [results_by_source[source][:10]
+                        for source in relevant_sources]
 
     # Aplatir la liste des résultats
-    relevant_results = [chunk for sublist in relevant_results for chunk in sublist]
+    relevant_results = [
+        chunk for sublist in relevant_results for chunk in sublist]
 
     filenames = [result.metadata["source"] for result in relevant_results]
     short_filenames = [os.path.basename(file) for file in filenames]
@@ -111,30 +114,33 @@ async def factory():
                     "mpnet-v2",
                     "camembert-base",
                 ],
-                initial_index=0,
+                initial_index=2,
             ),
         ]
     ).send()
-    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set(
+        "memory", ConversationBufferMemory(return_messages=True))
 
-    charge_index(index_path)
+    charge_index(index_path, embeddings)
 
 
-def charge_index(index_path):
-    print(f"index_path: {index_path}\nembeddings:{embeddings}")
-    if os.path.exists(index_path):
+def charge_index(new_index_path, new_embeddings):
+    print(f"index_path: {new_index_path}\nembeddings:{new_embeddings}")
+    if os.path.exists(new_index_path):
         vectorstore = FAISS.load_local(
-            index_path, embeddings=embeddings, allow_dangerous_deserialization=True
+            new_index_path, embeddings=new_embeddings, allow_dangerous_deserialization=True
         )
         print("Index chargé à partir du chemin existant.")
     else:
         chunks = load_new_documents("differents_textes")
 
-        vectorstore = FAISS.from_documents(documents=chunks, embedding=embeddings)
+        vectorstore = FAISS.from_documents(
+            documents=chunks, embedding=new_embeddings)
 
-        vectorstore.save_local(index_path)
+        vectorstore.save_local(new_index_path)
         print("Nouvel index créé et sauvegardé.")
 
+    print(f"Type d'index: {vectorstore.index}")
     retriever = vectorstore.as_retriever()
     cl.user_session.set("retriever", retriever)
 
@@ -147,7 +153,7 @@ async def main(message):
 
     # setup_model() et trouve_contexte() à adapter suivant ce qui est recherché
     runnable_model = setup_model()
-    msg = cl.Message(content="")
+    msg = cl.Message(content="", author=cl.user_session.get("nom_model"))
     async for chunk in runnable_model.astream(
         {"question": question, "context": trouve_contexte(question)},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
@@ -161,9 +167,9 @@ async def main(message):
 async def setup_agent(settings):
     print("on_settings_update", settings)
 
-    embeddings, index_path = change_model(settings["model"])
-    cl.user_session.set("embeddings", embeddings)
-    cl.user_session.set("index_path", index_path)
+    embeddings_t, index_path_t = change_model(settings["model"])
+    charge_index(index_path_t, embeddings_t)
+    cl.user_session.set("nom_model", settings["model"])
 
     # add_documents(settings["addDocuments"])
     # print(str(settings["addDocuments"])+" bien ajouté à l'index")
