@@ -2,6 +2,7 @@ import os
 import chainlit as cl
 from numpy import vectorize
 from utils.manip_documents import *
+from utils.web_scraper import *
 
 from langchain_community.vectorstores import FAISS
 from langchain.schema.runnable.config import RunnableConfig
@@ -120,23 +121,46 @@ async def factory():
     ).send()
     cl.user_session.set(
         "memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set("nom_model", "instructor-large")
 
     charge_index(index_path, embeddings)
 
 
-def charge_index(new_index_path, new_embeddings, new_document=None):
-    #print(f"index_path: {new_index_path}\nembeddings:{new_embeddings}")
+def charge_index(new_index_path, new_embeddings):
+    # print(f"index_path: {new_index_path}\nembeddings:{new_embeddings}")
     if os.path.exists(new_index_path):
         vectorstore = FAISS.load_local(
             new_index_path, embeddings=new_embeddings, allow_dangerous_deserialization=True
         )
         print("Index chargé à partir du chemin existant.")
     else:
-        chunks = load_new_documents("differents_textes")
+        # chunks = load_new_documents("differents_textes")
+
+        # pour faire disparaitre un warning
+        os.environ["TOKENIZERS_PARALLELISM"] = "True"
+        webpage_dict = [
+            {"url": "https://e-services.uha.fr/fr/index.html", "type": "connexion"},
+            {"url": "https://www.emploisdutemps.uha.fr/", "type": "edt"},
+            {"url": "https://e-formation.uha.fr/login/index.php?authCAS=CAS",
+                "type": "connexion"},
+            {"url": "https://e-formation.uha.fr/enrol/index.php?id=3161",
+                "type": "moodle"},  # cloud computing
+            {"url": "https://e-partage.uha.fr/modern/email/Sent", "type": "partage"},
+            {"url": "https://www.uha.fr/fr/formation-1/accompagnement-a-la-reussite-1/numerique.html",
+                "type": "plain"}
+        ]
+        web_scraped = load_web_documents_firefox(
+            webpage_dict, "https://cas.uha.fr/cas/login")
+        if web_scraped is None:
+            "web_scraped est vide"
+        chunks_web = web_scraped["web_result"]
+        chunks_pdf = load_new_documents_from_web(web_scraped["pdf_to_read"])
+        print("les deux chunks ont été récupérés")
+        print(f"liste des url pdf:{web_scraped['pdf_to_read']}")
 
         # potientiellement enlever l'argument index_factory
         vectorstore = FAISS.from_documents(
-            documents=chunks, embedding=new_embeddings)
+            documents=chunks_web + chunks_pdf, embedding=new_embeddings)
 
         vectorstore.save_local(new_index_path)
         print("Nouvel index créé et sauvegardé.")
@@ -169,6 +193,9 @@ async def setup_agent(settings):
     print("on_settings_update", settings)
 
     embeddings_t, index_path_t = change_model(settings["model"])
-    charge_index(index_path_t, embeddings_t, settings["addDocuments"])
+    charge_index(index_path_t, embeddings_t)
     cl.user_session.set("nom_model", settings["model"])
-    add_files_to_index(index_path_t, embeddings_t, settings["addDocuments"])
+    if settings["addDocuments"] is not None:
+        add_files_to_index(index_path_t, embeddings_t,
+                           settings["addDocuments"])
+        settings["addDocuments"] = ""
