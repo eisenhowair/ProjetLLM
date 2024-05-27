@@ -1,3 +1,6 @@
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
+from typing import List, Dict
 import os
 import json
 import chainlit as cl
@@ -12,12 +15,12 @@ from PyPDF2 import PdfReader
 from typing import List
 
 
-from embedding_models import *
+from utils.embedding_models import *
 
 
 model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
-embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model_hf_en_instructor_large)
+
 embeddings_OL = OllamaEmbeddings(
     base_url="http://localhost:11434",
     model=embedding_model_ol_en_nomic,
@@ -26,30 +29,38 @@ embeddings_OL = OllamaEmbeddings(
 )
 
 # on décide ici quel index et quel modèle utiliser
-embeddings = embeddings_HF
+embeddings = HuggingFaceEmbeddings(
+    model_name=embedding_model_hf_en_instructor_large)
 index_path = index_en_path_instructor_large
 faiss_index = None
 
 
-def load_new_documents(directory):
-    documents = load_documents_from_directory(directory)
+def process_document(doc: Dict) -> List[Document]:
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=150)
-
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=400, chunk_overlap=150)
     chunks = []
-    for doc in documents:
-        splits = text_splitter.create_documents(
-            text_splitter.split_text(doc["content"])
-        )
-        for split in splits:
-            split.metadata = {"source": doc["source"], **doc.get("metadata", {})}
-            chunks.append(split)
-
+    splits = text_splitter.create_documents(
+        text_splitter.split_text(doc["content"])
+    )
+    for split in splits:
+        split.metadata = {
+            "source": doc["source"], **doc.get("metadata", {})}
+        chunks.append(split)
     return chunks
 
 
+def load_new_documents(directory: str) -> List[Document]:
+
+    documents = load_documents_from_directory(directory)
+    all_chunks = []
+    for doc in documents:
+        all_chunks.extend(process_document(doc))
+    return all_chunks
+
+
 def change_model(new_model):
-    # on change de modèle d'embedding pour en prendre un adapté à la langue
+    # on change de modèle d'embedding pour en prendre un plus adapté
 
     if new_model == "instructor-large":
         embeddings_HF = HuggingFaceEmbeddings(
@@ -70,7 +81,8 @@ def change_model(new_model):
         index_path = index_en_path_instructor_base
 
     elif new_model == "mpnet-v2":
-        embeddings_HF = HuggingFaceEmbeddings(model_name=embedding_model_hf_en_mpnet)
+        embeddings_HF = HuggingFaceEmbeddings(
+            model_name=embedding_model_hf_en_mpnet)
         index_path = index_en_path_mpnet
 
     elif new_model == "camembert-base":
@@ -87,7 +99,8 @@ def read_text_from_file(file_path: str) -> str:
         with open(file_path, "rb") as f:
             reader = PdfReader(f)
             metadata = reader.metadata
-            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            text = "\n".join(page.extract_text()
+                             or "" for page in reader.pages)
             return text, metadata
     elif file_path.lower().endswith(".txt"):
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
@@ -96,14 +109,16 @@ def read_text_from_file(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.dumps(json.load(f)), {}
     else:
-        raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
+        raise ValueError(
+            "Unsupported file type. Please upload a .txt or .pdf file.")
 
 
 # Function to load documents individually
 
 
 def add_documents_to_index(vectorstore, new_documents):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=150)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=400, chunk_overlap=150)
     new_docs = []
 
     for doc in new_documents:
