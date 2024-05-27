@@ -3,6 +3,8 @@ from langchain.docstore.document import Document
 from typing import List, Dict
 import os
 import json
+import requests
+import tempfile
 import chainlit as cl
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
@@ -14,7 +16,7 @@ from langchain_community.vectorstores import FAISS
 from PyPDF2 import PdfReader
 from typing import List
 
-
+from urllib import request
 from utils.embedding_models import *
 
 
@@ -36,20 +38,26 @@ faiss_index = None
 
 
 def add_files_to_index(index_path, embeddings, file_path):
+    """
+    Pour ajouter un fichier, et non pas créer l'index
+    """
     if not os.path.exists(index_path):
-        raise ValueError(f"L'index {index_path} n'existe pas. Veuillez le créer avant d'ajouter de nouveaux documents.")
-    
+        raise ValueError(
+            f"L'index {index_path} n'existe pas. Veuillez le créer avant d'ajouter de nouveaux documents.")
+
     # Charger l'index existant
-    vectorstore = FAISS.load_local(index_path, embeddings=embeddings, allow_dangerous_deserialization=True)
-    
+    vectorstore = FAISS.load_local(
+        index_path, embeddings=embeddings, allow_dangerous_deserialization=True)
+
     # Initialiser le text splitter
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=150)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=300, chunk_overlap=150)
 
     text, metadata = read_text_from_file(file_path)
-    document = Document(page_content=text, metadata=metadata)  
-    chunks = text_splitter.split_documents([document])   
+    document = Document(page_content=text, metadata=metadata)
+    chunks = text_splitter.split_documents([document])
     vectorstore.add_documents(chunks)
-    
+
     vectorstore.save_local(index_path)
     print("Les nouveaux documents ont été ajoutés à l'index et l'index a été sauvegardé.")
 
@@ -57,24 +65,61 @@ def add_files_to_index(index_path, embeddings, file_path):
 # utilisé
 def load_new_documents(directory: str) -> List[Document]:
 
-    documents = load_documents_from_directory(directory=directory)
-
     # Initialize CharacterTextSplitter
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=300, chunk_overlap=150
     )
 
-        # Split each document into chunks
+    # Split each document into chunks
     chunks = []
+
+    documents = load_documents_from_directory(directory=directory)
+
     for doc in documents:
         splits = text_splitter.create_documents(
             text_splitter.split_text(doc["content"])
         )
         for split in splits:
-            split.metadata = {"source": doc["source"], **doc.get("metadata", {})}
+            split.metadata = {
+                "source": doc["source"], **doc.get("metadata", {})}
             chunks.append(split)
     return chunks
 
+
+def load_new_documents_from_web(pdf_urls: List[str]) -> List[Document]:
+    chunks = []
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=300, chunk_overlap=150
+    )
+    num_fichier = -1
+    session = requests.Session()
+
+    for pdf_url in pdf_urls:
+        try:
+            num_fichier += 1
+            request.urlretrieve(
+                pdf_url, "differents_textes/"+str(num_fichier)+".pdf")
+            response = session.get(pdf_url, stream=True, allow_redirects=True)
+            response.raise_for_status()
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+                tmp_file.flush()
+                try:
+                    reader = PdfReader(tmp_file.name)
+                    pdf_text = "\n".join(page.extract_text()
+                                         for page in reader.pages)
+                    splits = text_splitter.create_documents(
+                        text_splitter.split_text(pdf_text))
+                    for split in splits:
+                        split.metadata = {"source": pdf_url}
+                        chunks.append(split)
+                except Exception as e:
+                    print(f"Error processing PDF {pdf_url}: {e}")
+        except Exception as e:
+            print(f"Error downloading PDF {pdf_url}: {e}")
+
+    return chunks
 
 
 def read_text_from_file(file_path: str) -> str:
@@ -117,6 +162,7 @@ def load_documents_from_directory(directory):
                     print(f"Error processing {file_path}: {e}")
     return documents
 
+
 def change_model(new_model):
     # on change de modèle d'embedding pour en prendre un plus adapté
 
@@ -148,6 +194,7 @@ def change_model(new_model):
         index_path = index_fr_path_camembert
 
     return embeddings_HF, index_path
+
 
 """
 
