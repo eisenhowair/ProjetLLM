@@ -134,7 +134,6 @@ def charge_index(new_index_path, new_embeddings):
         )
         print("Index chargé à partir du chemin existant.")
     else:
-        # chunks = load_new_documents("differents_textes")
 
         # pour faire disparaitre un warning
         os.environ["TOKENIZERS_PARALLELISM"] = "True"
@@ -143,8 +142,8 @@ def charge_index(new_index_path, new_embeddings):
             {"url": "https://www.emploisdutemps.uha.fr/", "type": "edt"},
             {"url": "https://e-formation.uha.fr/login/index.php?authCAS=CAS",
                 "type": "connexion"},
-            {"url": "https://e-formation.uha.fr/enrol/index.php?id=3161",
-                "type": "moodle"},  # cloud computing
+            {"url": "https://e-formation.uha.fr/my/courses.php",
+                "type": "accueil_moodle"},  # page mes cours sur moodle
             {"url": "https://e-partage.uha.fr/modern/email/Sent", "type": "partage"},
             {"url": "https://www.uha.fr/fr/formation-1/accompagnement-a-la-reussite-1/numerique.html",
                 "type": "plain"}
@@ -154,11 +153,11 @@ def charge_index(new_index_path, new_embeddings):
         if web_scraped is None:
             "web_scraped est vide"
         chunks_web = web_scraped["web_result"]
-        chunks_pdf = load_new_documents_from_web(web_scraped["pdf_to_read"])
+        chunks_pdf = load_new_documents("differents_textes/moodle")
+
         print("les deux chunks ont été récupérés")
         print(f"liste des url pdf:{web_scraped['pdf_to_read']}")
 
-        # potientiellement enlever l'argument index_factory
         vectorstore = FAISS.from_documents(
             documents=chunks_web + chunks_pdf, embedding=new_embeddings)
 
