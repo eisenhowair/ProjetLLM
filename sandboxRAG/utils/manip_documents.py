@@ -86,42 +86,6 @@ def load_new_documents(directory: str) -> List[Document]:
     return chunks
 
 
-def load_new_documents_from_web(pdf_urls: List[str]) -> List[Document]:
-    chunks = []
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300, chunk_overlap=150
-    )
-    num_fichier = -1
-    session = requests.Session()
-
-    for pdf_url in pdf_urls:
-        try:
-            num_fichier += 1
-            request.urlretrieve(
-                pdf_url, "differents_textes/"+str(num_fichier)+".pdf")
-            response = session.get(pdf_url, stream=True, allow_redirects=True)
-            response.raise_for_status()
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    tmp_file.write(chunk)
-                tmp_file.flush()
-                try:
-                    reader = PdfReader(tmp_file.name)
-                    pdf_text = "\n".join(page.extract_text()
-                                         for page in reader.pages)
-                    splits = text_splitter.create_documents(
-                        text_splitter.split_text(pdf_text))
-                    for split in splits:
-                        split.metadata = {"source": pdf_url}
-                        chunks.append(split)
-                except Exception as e:
-                    print(f"Error processing PDF {pdf_url}: {e}")
-        except Exception as e:
-            print(f"Error downloading PDF {pdf_url}: {e}")
-
-    return chunks
-
-
 def read_text_from_file(file_path: str) -> str:
     """Function to read PDF and return text"""
 
