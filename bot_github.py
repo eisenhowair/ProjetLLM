@@ -60,7 +60,7 @@ def generate_comment(diff_files):
 
     changes = ""
     for file in diff_files:
-        filename = file['filename']
+        filename = file.get('filename', '(Nom de fichier manquant)')
         patch = file.get('patch', '(pas de différence détectée)')
         changes += f"Fichier: {filename}\nDiff:\n{patch}\n\n"
 
