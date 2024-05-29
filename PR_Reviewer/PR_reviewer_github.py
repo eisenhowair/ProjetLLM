@@ -15,12 +15,13 @@ dans un autre terminal, lancer ce programme
 
 """
 app = Flask(__name__)
-env_path = os.path.join(os.path.dirname(__file__), 'sandboxRAG', '.env')
+env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path)
 
-REPO_NAME = {os.getenv("REPO_NAME")}
-REPO_OWNER = {os.getenv("REPO_OWNER")}
-GITHUB_TOKEN = {os.getenv("GITHUB_TOKEN")}
+REPO_NAME = os.getenv("REPO_NAME")
+REPO_OWNER = os.getenv("REPO_OWNER")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
 
 llm_local = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
@@ -59,8 +60,11 @@ def generate_comment(diff_files):
     )
 
     changes = ""
+    print(diff_files)
     for file in diff_files:
-        filename = file.get('filename', '(Nom de fichier manquant)')
+        filename = file['filename']
+        if filename is None:
+            filename = ("(pas de nom de fichier)")
         patch = file.get('patch', '(pas de différence détectée)')
         changes += f"Fichier: {filename}\nDiff:\n{patch}\n\n"
 
