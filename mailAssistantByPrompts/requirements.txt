@@ -1,0 +1,4 @@
+langchain_community
+langchain
+PyPDF
+chainlit
