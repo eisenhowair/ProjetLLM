@@ -22,7 +22,6 @@ REPO_NAME = {os.getenv("REPO_NAME")}
 REPO_OWNER = {os.getenv("REPO_OWNER")}
 GITHUB_TOKEN = {os.getenv("GITHUB_TOKEN")}
 
-
 llm_local = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
 
@@ -86,28 +85,16 @@ def post_comment(pull_number, comment):
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    try:
-        data = request.json
-        print("Payload reçu :", data)
-
-        if 'action' in data and data['action'] in ['opened', 'synchronize']:
-            print("PR detected")
-            pull_number = data['pull_request']['number']
-            try:
-                diff_files = get_diff(pull_number)
-                comment = generate_comment(diff_files)
-                response = post_comment(
-                    pull_number, comment.generations[0][0].text)
-                return jsonify(response)
-            except Exception as e:
-                print("Erreur:", e)
-                return jsonify({'error': str(e)}), 500
-        else:
-            print("Action non reconnue ou manquante")
-            return jsonify({'error': 'Action non reconnue ou manquante'}), 400
-    except Exception as e:
-        print("Erreur lors du traitement de la requête :", e)
-        return jsonify({'error': str(e)}), 500
+    data = request.json
+    if data['action'] in ['opened', 'synchronize']:
+        print("PR detected")
+        pull_number = data['pull_request']['number']
+        diff_files = get_diff(pull_number)
+        comment = generate_comment(diff_files)
+        response = post_comment(pull_number, comment.generations[0][0].text)
+        print(response)
+        return jsonify(response)
+    return '', 200
 
 
 if __name__ == '__main__':
