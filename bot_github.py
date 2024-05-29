@@ -7,7 +7,7 @@ import requests
 """
 pip install flask
 sudo snap install ngrok
-ngrok config add-authtoken 2h8pr9hpGvO0bKsc6er15FpvDmR_h7HUGDPoyQbupaBunK8S # pour se connecter (il faut se créer un compte pour en obtenir un)
+ngrok config add-authtoken (avec le token ici) # pour se connecter (il faut se créer un compte pour en obtenir un)
 sudo ngrok http 5000
 dans un autre terminal, lancer ce programme
 
