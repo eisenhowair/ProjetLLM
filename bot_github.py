@@ -3,6 +3,8 @@ from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 from flask import Flask, request, jsonify
 import requests
+import os
+from dotenv import load_dotenv
 
 """
 pip install flask
@@ -13,10 +15,12 @@ dans un autre terminal, lancer ce programme
 
 """
 app = Flask(__name__)
+env_path = os.path.join(os.path.dirname(__file__), 'sandboxRAG', '.env')
+load_dotenv(dotenv_path=env_path)
 
-GITHUB_TOKEN = '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'
-REPO_OWNER = 'eisenhowair'
-REPO_NAME = 'ProjetLLM'
+REPO_NAME = {os.getenv("REPO_NAME")}
+REPO_OWNER = {os.getenv("REPO_OWNER")}
+GITHUB_TOKEN = {os.getenv("GITHUB_TOKEN")}
 
 
 llm_local = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
