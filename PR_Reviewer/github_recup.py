@@ -13,6 +13,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 import faiss
+import time
 
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path)
@@ -80,6 +81,7 @@ Settings.context_window = 3900
 
 
 def charge_index(documents,index_path = index_en_path_instructor_large): # ici changer l'index selon embedding_models
+    start = time.time()
     print(index_path)
     if documents is None:
         return -1
@@ -101,6 +103,9 @@ def charge_index(documents,index_path = index_en_path_instructor_large): # ici c
         index = VectorStoreIndex.from_documents(
             documents, storage_context=storage_context_global, show_progress=True)
         index.storage_context.persist(index_path)
+    end = time.time()
+    
+    print(f"-----\nTemps pris pour génération de l'index:{end-start}")
     return index
 
 
