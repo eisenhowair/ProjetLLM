@@ -1,6 +1,6 @@
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings, load_index_from_storage
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
-from IPython.display import Markdown, display
+#from IPython.display import Markdown, display
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -60,13 +60,33 @@ Settings.node_parser = SentenceSplitter(chunk_size=512, chunk_overlap=20)
 Settings.num_output = 512
 Settings.context_window = 3900
 
-vector_store = FaissVectorStore(faiss_index=faiss_index)
-storage_context_global = StorageContext.from_defaults(
-    vector_store=vector_store)
+def charge_index(index_path):
+    if os.path.exists(index_path):
+        vector_store = FaissVectorStore.from_persist_dir(index_path)
+        storage_context = StorageContext.from_defaults(
+            vector_store=vector_store, persist_dir=index_path)
+        index = load_index_from_storage(storage_context=storage_context)
+        return index
+        storage_context = StorageContext.from_defaults(
+            persist_dir=index_path
+        )
+        print("Index existant chargé")
+        return load_index_from_storage(storage_context)
+    else:
+        # Créer un nouvel index si non disponible
+        os.makedirs(index_path)
+        print("Création d'un nouvel index")
+        vector_store = FaissVectorStore(faiss_index=faiss_index)
+        storage_context_global = StorageContext.from_defaults(
+            vector_store=vector_store)
 
-index = VectorStoreIndex.from_documents(
-    documents, storage_context=storage_context_global, show_progress=True)
-index.storage_context.persist("index_github")
+        index = VectorStoreIndex.from_documents(
+            documents, storage_context=storage_context_global, show_progress=True)
+        index.storage_context.persist(index_path)
+    return index
+
+index = charge_index("index_github")
+
 query_engine = index.as_query_engine()
 response = query_engine.query(
     "Quelles sont les différences entre un RAG langchain et un RAG llama_index?",
