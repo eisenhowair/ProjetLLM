@@ -1,4 +1,4 @@
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings, load_index_from_storage
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -6,15 +6,12 @@ from llama_index.llms.ollama import Ollama
 import faiss
 import os
 
-# Configuration
-persist_dir = "llama_index"
-if not os.path.exists(persist_dir):
-    os.makedirs(persist_dir)
 
 embed_model = HuggingFaceEmbedding(
     model_name="sentence-transformers/all-mpnet-base-v2",
 )
-llm = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
+llm = Ollama(base_url="http://localhost:11434",
+             model="llama3:instruct", request_timeout=1000.0)
 
 d = 768
 faiss_index = faiss.IndexFlatL2(d)
@@ -26,23 +23,47 @@ Settings.num_output = 512
 Settings.context_window = 3900
 
 vector_store = FaissVectorStore(faiss_index=faiss_index)
-storage_context = StorageContext.from_defaults(vector_store=vector_store)
+storage_context_global = StorageContext.from_defaults(
+    vector_store=vector_store)
 
+print(Settings)
 # Charger l'index si disponible
-index_path = os.path.join(persist_dir, 'vector_store.index')
-if os.path.exists(index_path):
-    index = VectorStoreIndex.load(storage_context, persist_dir)
-else:
-    # Créer un nouvel index si non disponible
-    reader = SimpleDirectoryReader("differents_textes/moodle")
-    documents = reader.load_data()
-    index = VectorStoreIndex.from_documents(
-        documents, storage_context=storage_context, show_progress=True)
-    index.storage_context.persist(persist_dir)
 
+
+def charge_index(index_path):
+    if os.path.exists(index_path):
+        vector_store = FaissVectorStore.from_persist_dir(index_path)
+        storage_context = StorageContext.from_defaults(
+            vector_store=vector_store, persist_dir=index_path)
+        index = load_index_from_storage(storage_context=storage_context)
+        return index
+        storage_context = StorageContext.from_defaults(
+            persist_dir=index_path
+        )
+        print("Index existant chargé")
+        return load_index_from_storage(storage_context)
+    else:
+        # Créer un nouvel index si non disponible
+        os.makedirs(index_path)
+        print("Création d'un nouvel index")
+        reader = SimpleDirectoryReader(
+            input_dir="differents_textes", exclude_hidden=True, recursive=True)
+        # documents = reader.load_data()
+        documents = []
+        for docs in reader.iter_data(show_progress=True):
+            # <do something with the documents per file>
+            documents.extend(docs)
+        index = VectorStoreIndex.from_documents(
+            documents, storage_context=storage_context_global, show_progress=True)
+        index.storage_context.persist(index_path)
+    return index
+
+
+index = charge_index(index_path="llama_index")
 # Utilisation de l'index pour une requête
-query = "qui est joel heinis?"
-response = index.as_query_engine(similarity_top_k=3).query(query)
+prompt = "quelle est la relation entre Grimaud et Athos?"
+query_engine = index.as_query_engine()
+response = query_engine.query(prompt)
 print(response.response)
 
 for node in response.source_nodes:
