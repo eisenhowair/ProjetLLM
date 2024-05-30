@@ -59,9 +59,10 @@ def charge_index(index_path):
     return index
 
 
-index = charge_index(index_path="llama_index")
+index = charge_index(index_path="vectorstores/llama_index_mpnet")
 # Utilisation de l'index pour une requête
-prompt = "quelle est la relation entre Grimaud et Athos?"
+prompt = input(
+    "Entrez une requête portant sur moodle ou les textes dans differents_textes:")
 query_engine = index.as_query_engine()
 response = query_engine.query(prompt)
 print(response.response)
