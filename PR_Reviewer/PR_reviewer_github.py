@@ -7,7 +7,9 @@ import os
 from dotenv import load_dotenv
 
 """
-
+la version gratuite de ngrok fait changer l'url de ngrok chaque jour
+donc pour l'utiliser il faut aller dans Settings -> Webhooks, et mettre à jour l'url
+avec celle apparaissant à l'écran en lancant ngrok http 5000
 sudo snap install ngrok
 ngrok config add-authtoken (avec le token ici) # pour se connecter (il faut se créer un compte pour en obtenir un)
 sudo ngrok http 5000
