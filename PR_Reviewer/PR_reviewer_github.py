@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 
 """
-pip install flask
+
 sudo snap install ngrok
 ngrok config add-authtoken (avec le token ici) # pour se connecter (il faut se créer un compte pour en obtenir un)
 sudo ngrok http 5000
