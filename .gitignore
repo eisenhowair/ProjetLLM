@@ -10,4 +10,5 @@ data
 example.ini
 .vscode
 sandboxRAG/differents_textes/moodle
-sandboxRAG/llama_index
+sandboxRAG/llama_index/*
+sandboxRAG/vectorstores/llama_index_mpnet/*
