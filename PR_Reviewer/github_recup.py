@@ -121,7 +121,7 @@ def fetch_repository(repo_owner=None, repo_name=None, repo_url=None):
 
 
 embed_model = HuggingFaceEmbedding(
-    model_name=embedding_model_hf_en_instructor_large,  # ici changer le modèle selon embedding_models
+    model_name=embedding_model_hf_en_mpnet,  # ici changer le modèle selon embedding_models
 )
 llm = Ollama(base_url="http://localhost:11434",
              model="llama3:instruct", request_timeout=1000.0)
@@ -136,7 +136,7 @@ Settings.num_output = 512
 Settings.context_window = 3900
 
 
-def charge_index(documents,index_path = index_en_path_instructor_large): # ici changer l'index selon embedding_models
+def charge_index(documents,index_path = index_en_path_mpnet): # ici changer l'index selon embedding_models
     print(index_path)
     if documents is None:
         return -1
