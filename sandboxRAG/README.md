@@ -1,6 +1,6 @@
 # RAG
 
-## dossier_entier_RAG.py
+## RAG_moodle_ENT.py
 
 Anciennement : Question par console fonctionne bien en utilisant un index, mais ne fonctionne pas avec chainlit car n'utilise pas l'index.
 Version actuelle (23 mai): Le programme fonctionne maintenant avec chainlit, et ne met que 3 minutes à répondre aux questions, en se basant sur un index composé de plusieurs fichiers de taille et type variable. Le modèle d'embedding n'est plus nomic-embed-text, qui faisait trop d'erreur dans sa sélection de documents, mais aussi de chunks, mais instructor-large, qui est bien plus consistant. L'index est stocké localement pour ne pas avoir à le recréer à chaque exécution du programme.

@@ -3,6 +3,8 @@ import chainlit as cl
 from numpy import vectorize
 from utils.manip_documents import *
 from utils.web_scraper import *
+from chainlit.types import ThreadDict
+
 
 from langchain_community.vectorstores import FAISS
 from langchain.schema.runnable.config import RunnableConfig
@@ -72,7 +74,7 @@ def trouve_contexte(question):
         results_by_source[source].append(result)
 
     # sources différentes
-    relevant_sources = list(results_by_source.keys())[:2]
+    relevant_sources = list(results_by_source.keys())[:3]
     # chunks par source
     relevant_results = [results_by_source[source][:10]
                         for source in relevant_sources]
@@ -109,13 +111,12 @@ async def factory():
                 id="model",
                 label="Model",
                 values=[
-                    "instructor-xl",
                     "instructor-base",
                     "instructor-large",
                     "mpnet-v2",
                     "camembert-base",
                 ],
-                initial_index=2,
+                initial_index=1,
             ),
         ]
     ).send()
@@ -153,7 +154,7 @@ def charge_index(new_index_path, new_embeddings):
         if web_scraped is None:
             "web_scraped est vide"
         chunks_web = web_scraped["web_result"]
-        chunks_pdf = load_new_documents("differents_textes/moodle")
+        chunks_pdf = load_new_documents("differents_textes")
 
         print("les deux chunks ont été récupérés")
         print(f"liste des url pdf:{web_scraped['pdf_to_read']}")
@@ -185,6 +186,8 @@ async def main(message):
         await msg.stream_token(chunk)
 
     await msg.send()
+    memory.chat_memory.add_user_message(message.content)
+    memory.chat_memory.add_ai_message(msg.content)
 
 
 @cl.on_settings_update
@@ -198,3 +201,17 @@ async def setup_agent(settings):
         add_files_to_index(index_path_t, embeddings_t,
                            settings["addDocuments"])
         settings["addDocuments"] = ""
+
+@cl.on_chat_resume
+async def on_chat_resume(thread: ThreadDict):
+    memory = ConversationBufferMemory(return_messages=True)
+    root_messages = [m for m in thread["steps"] if m["parentId"] == None]
+    for message in root_messages:
+        if message["type"] == "user_message":
+            memory.chat_memory.add_user_message(message["output"])
+        else:
+            memory.chat_memory.add_ai_message(message["output"])
+
+    cl.user_session.set("memory", memory)
+    
+    await factory()
