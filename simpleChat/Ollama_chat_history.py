@@ -12,7 +12,7 @@ import chainlit as cl
 
 @cl.on_chat_start
 async def on_chat_start():
-    model = Ollama(base_url="http://localhost:11434", model="llama3")
+    model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
     memory = ConversationBufferMemory(memory_key="history", input_key="input", max_token_limit=1000)
     # memory.chat_memory.add_user_message("Bonjour je suis Etudiant")
@@ -20,7 +20,7 @@ async def on_chat_start():
     prompt =  PromptTemplate(
         input_variables=['history', 'input'],
         template="""
-        Tu es un bot de conversation français. Un utilisateur va communiquer avec toi. Maintiens un ton formel dans tes réponses.
+        Tu es un bot de conversation français. Un utilisateur va communiquer avec toi.
         Historique de conversation :
         {history}
 

@@ -16,3 +16,5 @@
 https://github.com/ollama/ollama/blob/main/docs/tutorials/langchainpy.md
 
 https://github.com/sudarshan-koirala/langchain-ollama-chainlit/blob/main/simple_chaiui.py
+
+https://medium.com/@tahreemrasul/building-a-chatbot-application-with-chainlit-and-langchain-3e86da0099a6 ( pour utiliser la ConversationBufferMemory)

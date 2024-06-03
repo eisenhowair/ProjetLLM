@@ -9,7 +9,7 @@ import chainlit as cl
 
 @cl.on_chat_start
 async def on_chat_start():
-    model = Ollama(base_url="http://localhost:11434", model="llama3:8b",verbose=False)
+    model = Ollama(base_url="http://localhost:11434", model="llama3:instruct", verbose=False)
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -19,7 +19,7 @@ async def on_chat_start():
             ("human", "{question}"),
         ]
     )
-    
+
     runnable = prompt | model | StrOutputParser()
 
     cl.user_session.set("runnable", runnable)
