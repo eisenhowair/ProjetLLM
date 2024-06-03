@@ -2,10 +2,12 @@
 
 ## RAG_moodle_ENT.py
 
-Anciennement : Question par console fonctionne bien en utilisant un index, mais ne fonctionne pas avec chainlit car n'utilise pas l'index.
-Version actuelle (23 mai): Le programme fonctionne maintenant avec chainlit, et ne met que 3 minutes à répondre aux questions, en se basant sur un index composé de plusieurs fichiers de taille et type variable. Le modèle d'embedding n'est plus nomic-embed-text, qui faisait trop d'erreur dans sa sélection de documents, mais aussi de chunks, mais instructor-large, qui est bien plus consistant. L'index est stocké localement pour ne pas avoir à le recréer à chaque exécution du programme.
+1st version : Question par console fonctionne bien en utilisant un index, mais ne fonctionne pas avec chainlit car n'utilise pas l'index.
+2nd version : Le programme fonctionne maintenant avec chainlit, et ne met que 3 minutes à répondre aux questions, en se basant sur un index composé de plusieurs fichiers de taille et type variable. Le modèle d'embedding n'est plus nomic-embed-text, qui faisait trop d'erreur dans sa sélection de documents, mais aussi de chunks, mais instructor-large, qui est bien plus consistant. L'index est stocké localement pour ne pas avoir à le recréer à chaque exécution du programme.
 
 A été ajouté un système de connexion permettant de consulter les anciennes conversations, ainsi que de suivre l'exécution des requêtes via literal.ai (en ayant un fichier .env correspondant aux attentes demandées par le README dans modele_personnalise)
+
+3rd version (latest) : Le programme a maintenant une mémoire lui permettant de se souvenir des messages d'une conversation, permettant d'avoir une véritable discussion. En plus de ça, l'index se génère en se basant sur plusieurs page web, ainsi que les différents cours disponibles sur moodle, en utilisant BeautifulSoup et Selenium. Les différents fichiers sur moodle sont téléchargés dans le dossier differents_textes/moodle. Il est aussi possible de choisir parmi plusieurs modèles d'embedding dans les options chainlit.
 
 ## RAGPdfOrTxt.py
 
