@@ -1,24 +1,24 @@
+import chainlit as cl
+import faiss
+from llama_index.core.service_context import ServiceContext
+from llama_index.core.callbacks import CallbackManager
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.readers.github import GithubRepositoryReader, GithubClient
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings, load_index_from_storage
+from sandboxRAG.utils.embedding_models import *
 import os
 import sys
 from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from sandboxRAG.utils.embedding_models import *
-
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings, load_index_from_storage
-from llama_index.readers.github import GithubRepositoryReader, GithubClient
-from llama_index.vector_stores.faiss import FaissVectorStore
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.llms.ollama import Ollama
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.service_context import ServiceContext
-import faiss
-import chainlit as cl
 
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path)
+
 
 def create_prompt(user_query):
     return """
@@ -73,7 +73,9 @@ def create_prompt(user_query):
 
     You are to use the above guidelines to respond to user queries about the GitHub repository. Ensure each response is accurate, detailed, and includes relevant code snippets when necessary. Always strive to provide clear and thorough explanations that help the user understand the repository better.
     
-    User Query:"""+user_query+"\n - Response:"
+    User Query:"""+user_query+"""
+    - Response:"""
+
 
 REPO_NAME = os.getenv("REPO_NAME")
 REPO_OWNER = os.getenv("REPO_OWNER")
@@ -114,14 +116,16 @@ def fetch_repository(repo_owner=None, repo_name=None, repo_url=None):
     ).load_data(branch=BRANCH)
     print("documents bien chargés")
     for document in documents:
-        file_name = document.metadata['file_name']  # Accès au nom du fichier via metadata
+        # Accès au nom du fichier via metadata
+        file_name = document.metadata['file_name']
         print(file_name)
-    #print(documents)
+    # print(documents)
     return documents
 
 
 embed_model = HuggingFaceEmbedding(
-    model_name=embedding_model_hf_en_mpnet,  # ici changer le modèle selon embedding_models
+    # ici changer le modèle selon embedding_models
+    model_name=embedding_model_hf_en_mpnet,
 )
 llm = Ollama(base_url="http://localhost:11434",
              model="llama3:instruct", request_timeout=1000.0)
@@ -136,10 +140,10 @@ Settings.num_output = 512
 Settings.context_window = 3900
 
 
-def charge_index(documents,index_path = index_en_path_mpnet): # ici changer l'index selon embedding_models
+# ici changer l'index selon embedding_models
+def charge_index(index_path=index_en_path_mpnet, settings=None):
     print(index_path)
-    if documents is None:
-        return -1
+
     if os.path.exists(index_path):
         vector_store = FaissVectorStore.from_persist_dir(index_path)
         storage_context = StorageContext.from_defaults(
@@ -150,6 +154,13 @@ def charge_index(documents,index_path = index_en_path_mpnet): # ici changer l'in
         # Créer un nouvel index si non disponible
         os.makedirs(index_path)
         print("Création d'un nouvel index")
+
+        documents = fetch_repository(
+            repo_name=settings["name"], repo_owner=settings["owner"], repo_url=settings["url"])
+        if documents is None:
+            print("Pas de documents récupérés depuis le dépot Git")
+            return -1
+
         vector_store = FaissVectorStore(faiss_index=faiss_index)
         storage_context_global = StorageContext.from_defaults(
             vector_store=vector_store)
@@ -158,7 +169,8 @@ def charge_index(documents,index_path = index_en_path_mpnet): # ici changer l'in
             documents, storage_context=storage_context_global, show_progress=True)
         index.storage_context.persist(index_path)
 
-    service_context = ServiceContext.from_defaults(embed_model=Settings.embed_model, llm=Settings.llm,callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))    
+    service_context = ServiceContext.from_defaults(
+        embed_model=Settings.embed_model, llm=Settings.llm, callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))
     return index, service_context
 
 
@@ -167,13 +179,13 @@ def ask_github_index(query_engine, question):
         question,
         # verbose=True,
     )
-    #print(response)
+    # print(response)
 
     return response.response
 
 # décommenter si le fichier est utilisé tout seul
 # print("ne doit pas apparaitre en utilisant chainlit")
-#print(ask_github_index(charge_index(documents= fetch_repository(repo_owner="eisenhowair",
+# print(ask_github_index(charge_index(documents= fetch_repository(repo_owner="eisenhowair",
 #      repo_name="ProjetLLM")), "penses-tu que les différents RAGs ont été bien implémentés?"))
 
 

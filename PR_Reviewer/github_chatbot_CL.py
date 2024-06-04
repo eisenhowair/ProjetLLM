@@ -16,6 +16,7 @@ Temps pris pour la réponse à la question:125.97727012634277
 mpnet-base-v2
 """
 
+
 @cl.on_chat_start
 async def start():
     settings = await cl.ChatSettings(
@@ -28,6 +29,9 @@ async def start():
 
         ]
     ).send()
+    await cl.Message(content="Index en cours de chargement...", author="Préparation").send()
+    recup_index()
+    await cl.Message(content="Index chargé!", author="Préparation").send()
 
 
 @cl.on_message
@@ -36,13 +40,16 @@ async def main(message):
     question = message.content
     print("Question:" + question)
     start = time.time()
-    query_engine = cl.user_session.get("query_engine") # type: RetrieverQueryEngine
+    query_engine = cl.user_session.get(
+        "query_engine")  # type: RetrieverQueryEngine
 
     msg = cl.Message(content="", author="connexion nwaaaar")
+    res = await cl.make_async(query_engine.query)(create_prompt(message.content))
+    # res = await cl.make_async(query_engine.query)(message.content)
+    for source in res.source_nodes:
+        print(source)
+        # print(f"Nom: {source.name}, Score: {source.similarity_score}")
 
-    res = await cl.make_async(query_engine.query)(message.content)#(create_prompt(message.content))
-
- 
     for token in res.response_gen:
         await msg.stream_token(token)
     await msg.send()
@@ -52,19 +59,13 @@ async def main(message):
 
 
 @cl.step(type="run", name="Récupération de l'index")
-def recup_index(settings):
-    
-    documents_repo = fetch_repository(
-            repo_name=settings["name"], repo_owner=settings["owner"], repo_url=settings["url"])
+def recup_index(settings=None):
 
-    if fetch_repository == -1:
-        print("problème pour le dépot git")
-    else:
-        index,service_context = charge_index(documents=documents_repo)
-        query_engine = index.as_query_engine(streaming=True, similarity_top_k=2, service_context=service_context)
-        print("index bien chargé")
-        cl.user_session.set("query_engine", query_engine)
-
+    index, service_context = charge_index(settings=settings)
+    query_engine = index.as_query_engine(
+        streaming=True, similarity_top_k=4, similarity_cutoff=0.5, service_context=service_context)
+    print("index bien chargé")
+    cl.user_session.set("query_engine", query_engine)
 
 
 @cl.on_settings_update
