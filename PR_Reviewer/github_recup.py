@@ -9,7 +9,9 @@ from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
 from llama_index.core import VectorStoreIndex, StorageContext, Settings, load_index_from_storage
 import os
-from embedding_models import *
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from sandboxRAG.utils.embedding_models import *
 
 from dotenv import load_dotenv
 
@@ -60,7 +62,32 @@ def create_prompt_old(user_query):
     
     User Query:"""+user_query+"""
     - Response:"""
-def create_prompt(user_query = None):
+def create_prompt_simplifie(user_query=None):
+    return """
+    Github information is below.
+    ---------------------
+    {context}
+    ---------------------
+    You are a knowledgeable assistant with access to the content of a GitHub repository. Your task is to help users answer any questions they have about the repository, providing detailed explanations and code snippets where necessary. Follow these guidelines:
+
+    1. Understand the User Query: Carefully read the user's question to understand what information they are seeking. Identify if the question pertains to specific files, functions, or overall project documentation within the repository.
+
+    2. Locate Relevant Information: Search through the repository content to find relevant information that addresses the user's query. This might include reading through the README file, specific code files, comments, documentation, or any other relevant parts of the repository.
+
+    3. Provide Detailed Explanations: Formulate a comprehensive answer that thoroughly addresses the user's question. Ensure that your explanation is clear and easy to understand, even for those who might not be familiar with the codebase.
+
+    4. Include Code Snippets: If the question can be best answered with examples from the code, include relevant code snippets in your response. Highlight important sections of the code that are directly related to the user's query.
+
+    5. Clarify and Elaborate: If the user’s question is broad or unclear, ask clarifying questions to better understand their needs. Provide additional context or elaboration as needed to ensure the user fully understands your response.
+
+    6. Maintain Relevance and Accuracy: Ensure that all information and code snippets provided are accurate and directly relevant to the user's question. Avoid including unnecessary details that do not contribute to answering the question.
+
+    Instructions for the Model:
+    You are a knowledgeable assistant with access to the content of a GitHub repository. Answer the user's question based on the information provided.
+    
+    User Query: {question}
+    - Response:"""
+def create_prompt(user_query=None):
     return """
     Github information is below.
     ---------------------
@@ -102,12 +129,12 @@ def create_prompt(user_query = None):
     - Response: "The `config.json` file is used to store configuration settings for the application. It typically includes settings such as API keys, database connections, and other customizable parameters. Here is an example snippet from the `config.json` file:
         ```json
         {
-            'apiKey': 'your-api-key-here',
-            'database': {
-                'host': 'localhost',
-                'port': 5432,
-                'username': 'user',
-                'password': 'password'
+            "apiKey": "your-api-key-here",
+            "database": {
+                "host": "localhost",
+                "port": 5432,
+                "username": "user",
+                "password": "password"
             }
         }
         ```
@@ -119,7 +146,6 @@ def create_prompt(user_query = None):
     
     User Query:{question}
     - Response:"""
-
 
 REPO_NAME = os.getenv("REPO_NAME")
 REPO_OWNER = os.getenv("REPO_OWNER")
@@ -173,7 +199,7 @@ embed_model = HuggingFaceEmbedding(
 )
 llm = Ollama(base_url="http://localhost:11434",
              model="llama3:instruct", request_timeout=1000.0)
-
+#codegemma:7b-code
 d = 768
 faiss_index = faiss.IndexFlatL2(d)
 

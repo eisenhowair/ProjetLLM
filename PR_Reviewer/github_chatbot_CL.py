@@ -2,6 +2,7 @@ from github_recup import *
 import chainlit as cl
 from chainlit.input_widget import TextInput
 import time
+import asyncio
 from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
 from langchain import hub
 from llama_index.core.prompts import LangchainPromptTemplate
@@ -30,7 +31,7 @@ def auth_callback(username: str, password: str):
         )
     else:
         return None
-"""
+"""        
 def display_prompt_dict(prompts_dict):
     for k, p in prompts_dict.items():
         text_md = f"**Prompt Key**: {k}<br>" f"**Text:** <br>"
@@ -59,7 +60,7 @@ async def start():
 
 
 @cl.on_message
-async def main(message):
+async def main(message: cl.Message):
     question = message.content
     print("Question:" + question)
     start = time.time()
@@ -68,7 +69,7 @@ async def main(message):
     msg = cl.Message(content="", author="connexion nwaaaar")
 
     try:
-        res = await cl.make_async(query_engine.query)(question)
+        res = await asyncio.wait_for(cl.make_async(query_engine.query)(question), timeout=600)
 
         # Logging sources
         for source in res.source_nodes:
@@ -79,6 +80,10 @@ async def main(message):
             await msg.stream_token(token)
 
         await msg.send()
+    except asyncio.TimeoutError:
+        error_msg = "Error: The query timed out."
+        print(error_msg)
+        await cl.Message(content=error_msg, author="connexion nwaaaar").send()
     except Exception as e:
         error_msg = f"Error while processing the query: {str(e)}"
         print(error_msg)
@@ -88,20 +93,6 @@ async def main(message):
     print(f"-----\nTemps pris pour la réponse à la question: {end - start}")
 
     
-        
-@cl.step(type="run", name="Récupération de l'index")
-def recup_index_old(settings):
-    
-    documents_repo = fetch_repository(
-            repo_name=settings["name"], repo_owner=settings["owner"], repo_url=settings["url"])
-
-    if documents_repo == -1:
-        print("problème pour le dépot git")
-    else:
-        index,service_context = charge_index(documents=documents_repo)
-        query_engine = index.as_query_engine(streaming=True, similarity_top_k=2, service_context=service_context)
-        print("index bien chargé")
-        cl.user_session.set("query_engine", query_engine)
 
 
 def recup_index(settings=None):
@@ -109,12 +100,12 @@ def recup_index(settings=None):
     index, service_context = charge_index(settings=settings)
     query_engine = index.as_query_engine(
         streaming=True, similarity_top_k=4, service_context=service_context)
+    langchain_prompt = hub.pull("rlm/rag-prompt")
     
     display_prompt_dict(query_engine.get_prompts())
-    langchain_prompt = hub.pull("rlm/rag-prompt")
     lc_prompt_tmpl = LangchainPromptTemplate(
-        #template=PromptTemplate.from_template(template=create_prompt()),
-        template=langchain_prompt,
+        template=PromptTemplate.from_template(template=create_prompt_simplifie()),
+        #template=langchain_prompt,
         template_var_mappings={
             "query_str": "question", "context_str": "context"},
     )
