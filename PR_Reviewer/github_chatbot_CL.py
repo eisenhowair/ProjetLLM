@@ -21,7 +21,7 @@ Temps pris pour génération de l'index:40.64496183395386
 Temps pris pour la réponse à la question:125.97727012634277
 mpnet-base-v2
 """
-
+"""
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
 
@@ -31,7 +31,7 @@ def auth_callback(username: str, password: str):
         )
     else:
         return None
-        
+"""        
 def display_prompt_dict(prompts_dict):
     for k, p in prompts_dict.items():
         text_md = f"**Prompt Key**: {k}<br>" f"**Text:** <br>"
@@ -69,7 +69,6 @@ async def main(message: cl.Message):
     msg = cl.Message(content="", author="connexion nwaaaar")
 
     try:
-        # Setting a timeout for the query execution
         res = await asyncio.wait_for(cl.make_async(query_engine.query)(question), timeout=600)
 
         # Logging sources
@@ -94,20 +93,6 @@ async def main(message: cl.Message):
     print(f"-----\nTemps pris pour la réponse à la question: {end - start}")
 
     
-        
-@cl.step(type="run", name="Récupération de l'index")
-def recup_index_old(settings):
-    
-    documents_repo = fetch_repository(
-            repo_name=settings["name"], repo_owner=settings["owner"], repo_url=settings["url"])
-
-    if documents_repo == -1:
-        print("problème pour le dépot git")
-    else:
-        index,service_context = charge_index(documents=documents_repo)
-        query_engine = index.as_query_engine(streaming=True, similarity_top_k=2, service_context=service_context)
-        print("index bien chargé")
-        cl.user_session.set("query_engine", query_engine)
 
 
 def recup_index(settings=None):
