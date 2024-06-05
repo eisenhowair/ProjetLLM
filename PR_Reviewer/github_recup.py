@@ -8,20 +8,66 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings, load_index_from_storage
-from sandboxRAG.utils.embedding_models import *
 import os
 import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from sandboxRAG.utils.embedding_models import *
+
 from dotenv import load_dotenv
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path)
 
-
-def create_prompt(user_query):
+def create_prompt_old(user_query):
     return """
+    You are a knowledgeable assistant with access to the content of a GitHub repository. Your task is to help users answer any questions they have about the repository, providing detailed explanations and code snippets where necessary. Follow these guidelines:
+    1. Understand the User Query: Carefully read the user's question to understand what information they are seeking. Identify if the question pertains to specific files, functions, or overall project documentation within the repository.
+    2. Locate Relevant Information: Search through the repository content to find relevant information that addresses the user's query. This might include reading through the README file, specific code files, comments, documentation, or any other relevant parts of the repository.
+    3. Provide Detailed Explanations: Formulate a comprehensive answer that thoroughly addresses the user's question. Ensure that your explanation is clear and easy to understand, even for those who might not be familiar with the codebase.
+    4. Include Code Snippets: If the question can be best answered with examples from the code, include relevant code snippets in your response. Highlight important sections of the code that are directly related to the user's query.
+    5. Clarify and Elaborate: If the user’s question is broad or unclear, ask clarifying questions to better understand their needs. Provide additional context or elaboration as needed to ensure the user fully understands your response.
+    6. Maintain Relevance and Accuracy: Ensure that all information and code snippets provided are accurate and directly relevant to the user's question. Avoid including unnecessary details that do not contribute to answering the question.
+    Example Queries and Responses:
+    1. User Query: "Can you explain the main function in the `app.js` file?"
+    - Response: "Sure, here is the main function from the `app.js` file:
+        ```javascript
+        function main() {
+            // Initialize application
+            initializeApp();
+            // Set up event listeners
+            setupEventListeners();
+            // Start the main process
+            startProcess();
+        }
+        ```
+        This function serves as the entry point of the application. It first calls `initializeApp()` to set up necessary configurations. Then, it calls `setupEventListeners()` to handle user interactions, and finally, it starts the main process with `startProcess()`. Each of these functions is defined elsewhere in the `app.js` file."
+    2. User Query: "What is the purpose of the `config.json` file?"
+    - Response: "The `config.json` file is used to store configuration settings for the application. It typically includes settings such as API keys, database connections, and other customizable parameters. Here is an example snippet from the `config.json` file:
+        ```json
+        {
+            'apiKey': 'your-api-key-here',
+            'database': {
+                'host': 'localhost',
+                'port': 5432,
+                'username': 'user',
+                'password': 'password'
+            }
+        }
+        ```
+        These settings are read by the application at runtime to configure the necessary services and connections."
+    Instructions for the Model:
+    You are to use the above guidelines to respond to user queries about the GitHub repository. Ensure each response is accurate, detailed, and includes relevant code snippets when necessary. Always strive to provide clear and thorough explanations that help the user understand the repository better.
+    
+    User Query:"""+user_query+"""
+    - Response:"""
+def create_prompt(user_query = None):
+    return """
+    Github information is below.
+    ---------------------
+    {context}
+    ---------------------
     You are a knowledgeable assistant with access to the content of a GitHub repository. Your task is to help users answer any questions they have about the repository, providing detailed explanations and code snippets where necessary. Follow these guidelines:
 
     1. Understand the User Query: Carefully read the user's question to understand what information they are seeking. Identify if the question pertains to specific files, functions, or overall project documentation within the repository.
@@ -73,7 +119,7 @@ def create_prompt(user_query):
 
     You are to use the above guidelines to respond to user queries about the GitHub repository. Ensure each response is accurate, detailed, and includes relevant code snippets when necessary. Always strive to provide clear and thorough explanations that help the user understand the repository better.
     
-    User Query:"""+user_query+"""
+    User Query:{question}
     - Response:"""
 
 
@@ -141,7 +187,7 @@ Settings.context_window = 3900
 
 
 # ici changer l'index selon embedding_models
-def charge_index(index_path=index_en_path_mpnet, settings=None):
+def charge_index(index_path=index_en_path_mpnet, settings=None, documents=None):
     print(index_path)
 
     if os.path.exists(index_path):
@@ -149,6 +195,7 @@ def charge_index(index_path=index_en_path_mpnet, settings=None):
         storage_context = StorageContext.from_defaults(
             vector_store=vector_store, persist_dir=index_path)
         index = load_index_from_storage(storage_context=storage_context)
+        print("Index déjà existant, récupéré")
 
     else:
         # Créer un nouvel index si non disponible
