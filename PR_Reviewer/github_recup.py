@@ -7,11 +7,9 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings, load_index_from_storage
+from llama_index.core import VectorStoreIndex, StorageContext, Settings, load_index_from_storage
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from sandboxRAG.utils.embedding_models import *
+from embedding_models import *
 
 from dotenv import load_dotenv
 
