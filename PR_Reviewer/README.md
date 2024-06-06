@@ -9,6 +9,7 @@ Le **PR_Reviewer** permet d'appeler un modèle pour commenter les Pull Request e
 
 ### 2. Fonctionnement
 
+
 De par son utilisation de l'API Github, ce programme nécessite un fichier .env placé à son niveau, comportant les champs indiqués dans le .env.example, à savoir le nom du dépôt ciblé, son possesseur, et votre token Github pour avoir le droit d'utiliser l'API.
  
 Le programme est divisé en 3 fonctions importantes.
@@ -49,6 +50,7 @@ ngrok http 5000 # peut nécessiter un sudo
 
 ### 1. Introduction
 
+
 Le programme **github_chatbot_CL.py** utilise chainlit pour mettre en place un chatbot avec RAG portant sur un dépôt Github indiqué. Au lancement, il va vérifier si un index existe déjà à l'endroit indiqué (dans le dossier portant le nom du modèle d'embedding, lui-même dans le dossier vectorstores placé à la racine de ce projet), et le cas échéant le charge directement. L'opération prend quelques secondes, et des messages sur le chatbot permettent de voir si un index a été trouvé ou non. Si il n'y a pas d'index existant au préalable, cliquer sur les options (en bas à gauche de l'écran) permet d'entrer soit le nom du dépôt à récupérer et le nom de son possesseur, ou directement l'url complète. L'url toute seule suffit. Les documents du dépôt sont ensuite récupérés pour former un index, qui sera enregistré en local, pour ne pas avoir à le recréer à chaque fois. Dès lors, le chatbot permet de poser des questions au modèle sur le contenu de ce dépôt.
 
 ### 2. Fonctionnement
@@ -60,6 +62,7 @@ Le programme à lancer est **github_chatbot_CL.py**, avec la commande suivante :
 chainlit run github_chatbot_CL.py
 ```
 A noter les paramètres -h pour ne pas que chainlit ouvre de lui-même une nouvelle fenêtre, -w pour que chainlit s'actualise à chaque modification du code, et -d pour activer le debug.
+
 
   Lorsque l'utilisateur entre un dépôt github valide dans les paramètres, le décorateur chainlit *on_settings_update* va récupérer les valeurs, et les donner à la fonction *recup_index()*.  C'est dans cette fonction ,ainsi que *charge_index()* qui est appelée dès le début de *recup_index()* que le plus grand travail se fait. En effet, *charge_index()* va tout d'abord regarder si l'index existe déjà, et le récupérer si c'est le cas grâce aux différentes fonctions llama_index prévues pour l'occasion, ainsi que *from_persist_dir()*, de FAISS. Ces fonctions très simples d'utilisation permettent en quelques lignes de récupérer un index local, ainsi que le vectorstore.
 
