@@ -40,6 +40,7 @@ Answer:""",
 # Global index variable
 faiss_index = None
 
+
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
 
@@ -50,8 +51,8 @@ def auth_callback(username: str, password: str):
     else:
         return None
 
-# Function to read PDF and return text
-def read_text_from_file(file_path: str) -> str:
+
+def read_text_from_file(file_path: str) -> str: # Function to read PDF and return text
     if file_path.lower().endswith(".pdf"):
         with open(file_path, "rb") as f:
             reader = PdfReader(f)
@@ -60,11 +61,13 @@ def read_text_from_file(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
     else:
-        raise ValueError("Unsupported file type. Please upload a .txt or .pdf file.")
+        raise ValueError(
+            "Unsupported file type. Please upload a .txt or .pdf file.")
 
 
 def update_faiss_index(faiss_index: FAISS, documents: List[str]):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000, chunk_overlap=10)
     new_docs = text_splitter.create_documents(documents)
     faiss_index.add_documents(new_docs)
     faiss_index.save_local(index_path)
@@ -114,16 +117,14 @@ async def factory():
         content=f"""Document - `"{files[0].name}"` is uploaded and being processed!"""
     ).send()
 
-    # Read and process PDF file
     file_text = read_text_from_file(files[0].path)
     print(
         f"Processed text from {files[0].name}: {file_text[:60]}..."
-    )  # Print a snippet for vérification
+    )  # pour voir si tout se passe bien
 
     # Load or update the FAISS index
     faiss_index = get_faiss_index([file_text])
 
-    # Set up the QA chain
     qa_chain = RetrievalQA.from_chain_type(
         llm=model,
         chain_type="stuff",
@@ -149,6 +150,7 @@ async def factory():
     print(rag_chain.invoke(question_manuelle))
 """
 
+
 @cl.on_message
 async def main(message):
     chain = cl.user_session.get("chain")
@@ -157,6 +159,6 @@ async def main(message):
         {"query": message.content},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
-        #print(chunk)
+        # print(chunk)
         await msg.stream_token(chunk['result'])
     await msg.send()

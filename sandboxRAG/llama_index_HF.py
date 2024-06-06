@@ -26,8 +26,7 @@ vector_store = FaissVectorStore(faiss_index=faiss_index)
 storage_context_global = StorageContext.from_defaults(
     vector_store=vector_store)
 
-print(Settings)
-# Charger l'index si disponible
+print(str(Settings)+"\n------")
 
 
 def charge_index(index_path):
@@ -51,7 +50,6 @@ def charge_index(index_path):
         # documents = reader.load_data()
         documents = []
         for docs in reader.iter_data(show_progress=True):
-            # <do something with the documents per file>
             documents.extend(docs)
         index = VectorStoreIndex.from_documents(
             documents, storage_context=storage_context_global, show_progress=True)
