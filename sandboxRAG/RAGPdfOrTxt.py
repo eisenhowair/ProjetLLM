@@ -13,27 +13,20 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from llama_index.embeddings.ollama import OllamaEmbedding
+from utils.embedding_models import *
 
 # Configuration
-embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-index_path = "data/vectorstore/temp-index.faiss"
-"""embeddings = OllamaEmbeddings(
-    base_url="http://localhost:11434",
-    model="nomic-embed-text",
-    show_progress="true",
-    temperature=2,
-    top_k=10,
-    top_p=0.5,
-)"""
+index_path = "vectorstores/"+str(embedding_model_hf_en_mpnet)+"_VS"
+
 # Initialize embeddings
 
 embeddings = HuggingFaceEmbeddings(
-    model_name=embedding_model,
+    model_name=embedding_model_hf_en_mpnet,
     model_kwargs={"device": "cpu"},
     encode_kwargs={"normalize_embeddings": False},
 )
 
-model = Ollama(base_url="http://localhost:11434", model="llama3:8b")
+model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 prompt = PromptTemplate(
     template="""You are a helpful AI assistant. Answer the question based on the context.
 
@@ -47,6 +40,15 @@ Answer:""",
 # Global index variable
 faiss_index = None
 
+@cl.password_auth_callback
+def auth_callback(username: str, password: str):
+
+    if (username, password) == ("elias", "elias"):
+        return cl.User(
+            identifier="Elias", metadata={"role": "admin", "provider": "credentials"}
+        )
+    else:
+        return None
 
 # Function to read PDF and return text
 def read_text_from_file(file_path: str) -> str:
@@ -65,7 +67,7 @@ def update_faiss_index(faiss_index: FAISS, documents: List[str]):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
     new_docs = text_splitter.create_documents(documents)
     faiss_index.add_documents(new_docs)
-    faiss_index.save_local(index_path, index_name="tryoutIndex")
+    faiss_index.save_local(index_path)
 
 
 def get_faiss_index(documents: List[str] = None) -> FAISS:
@@ -74,7 +76,7 @@ def get_faiss_index(documents: List[str] = None) -> FAISS:
         if os.path.exists(index_path):
             print("Loading existing index...")
             faiss_index = FAISS.load_local(
-                index_path, embeddings, index_name="tryoutIndex"
+                index_path, embeddings, allow_dangerous_deserialization=True
             )
             if documents:
                 update_faiss_index(faiss_index, documents)
@@ -87,7 +89,7 @@ def get_faiss_index(documents: List[str] = None) -> FAISS:
             )
             docs = text_splitter.create_documents(documents)
             faiss_index = FAISS.from_documents(docs, embeddings)
-            faiss_index.save_local(index_path, index_name="tryoutIndex")
+            faiss_index.save_local(index_path)
     elif documents:
         print("Updating index with new documents...")
         update_faiss_index(faiss_index, documents)
@@ -99,7 +101,7 @@ async def factory():
     files = None
     while files is None:
         files = await cl.AskFileMessage(
-            content="""Your personal AI assistant, SAHAYAK is ready to help!
+            content="""Your personal AI assistant is ready to help!
                         To get started:
                         
 1. Upload a PDF file                     
@@ -139,12 +141,13 @@ async def factory():
 
     cl.user_session.set("chain", qa_chain)
 
+"""
     question_manuelle = "quel est le boss final de Elias adventure"
     msg = cl.Message(content="The bot is initialized. Ask your questions!")
     await msg.send()
     print(question_manuelle)
     print(rag_chain.invoke(question_manuelle))
-
+"""
 
 @cl.on_message
 async def main(message):
@@ -154,5 +157,6 @@ async def main(message):
         {"query": message.content},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
-        await msg.stream_token(chunk)
+        #print(chunk)
+        await msg.stream_token(chunk['result'])
     await msg.send()
