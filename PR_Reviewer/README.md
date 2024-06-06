@@ -70,10 +70,7 @@ ngrok http 5000 # peut nécessiter un sudo
 ```
 - après que l'écran noir de ngrok soit apparu, une url sera proposée à droite. C'est cette url, à laquelle il faudra rajouter "/webhook", qu'il faudra entrer dans le webhook de Github.
 
-
-<span style="color:red">
-Text content
-</span>
+<code style="color : orangered">text</code>
 
   
 
