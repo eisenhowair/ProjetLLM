@@ -42,16 +42,12 @@ De par son utilisation de l'API Github, ce programme nécessite un fichier .env 
  
 Le programme est divisé en 3 fonctions importantes.
 
-  
-
 ```py
-
 get_diff(pull_number)
 
 generate_comment(diff_files)
 
 post_comment(pull_number, comment)
-
 ```
 
 **get_diff()** appelle l'API Github pour récupérer les fichiers contenus dans la Pull Request dont le numéro est en paramètre de la fonction.
@@ -72,41 +68,11 @@ ngrok http 5000 # peut nécessiter un sudo
 ```
 - après que l'écran noir de ngrok soit apparu, une url sera proposée à droite. C'est cette url, à laquelle il faudra rajouter "/webhook", qu'il faudra entrer dans le webhook de Github.
 
-# Attention, l'url de ngrok change quotidiennement pour la version gratuite, il faut donc penser à mettre à jour l'url du webhook sur Github à chaque fois avec la nouvelle url fournie par ngrok.
-  
+> [!WARNING]
+> Attention, l'url de ngrok change quotidiennement pour la version gratuite, il faut donc penser à mettre à jour l'url du webhook sur Github à chaque fois avec la nouvelle url fournie par ngrok.
 
-### 2. Difficultés rencontrées
-
-Ici, tu pourras décrire les défis et les problèmes que tu as rencontrés lors de la création de **PR_Reviewer**. Parle des aspects techniques ou des obstacles que tu as dû surmonter.
 
   
+## Github_chatbot
 
-**Exemple :**
-
-Lors de la création de **PR_Reviewer**, plusieurs défis ont été rencontrés :
-
-- Gestion des cas particuliers dans les PR complexes.
-
-- Intégration avec l'API de GitHub pour récupérer et poster des commentaires.
-
-- Optimisation des performances pour traiter de grandes quantités de données en temps réel.
-
-  
-
-### 3. Comment utiliser le programme
-
-Cette section doit fournir des instructions claires sur la façon d'utiliser **PR_Reviewer**. Inclut des exemples de commandes, des paramètres, et des étapes d'installation.
-
-  
-
-**Exemple :**
-
-Pour utiliser **PR_Reviewer**, suivez les étapes suivantes :
-
-  
-
-1. Clonez le dépôt :
-
-```sh
-
-git clone https://github.com/votrecompte/PR_Reviewer.git
+### Introduction
