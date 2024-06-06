@@ -149,7 +149,7 @@ https://hackernoon.com/fr/un-tutoriel-sur-la-fa%C3%A7on-de-cr%C3%A9er-votre-prop
 
 # Embedding
 
-En changeant le modèle d'embedding, les résultats se sont améliorés(voir les différents graphiques comparant les modèles utilisés), mais le modèle peine yout de même à utiliser les bons chunks pour générer sa réponse, et s'emmêle encore, notamment à cause des prompts. Une étude plus poussée des prompts s'est donc avéré pour obtenir des résultats satisfaisants.
+En changeant le modèle d'embedding, les résultats se sont améliorés(voir les différents graphiques comparant les modèles utilisés), mais le modèle peine tout de même à utiliser les bons chunks pour générer sa réponse, et s'emmêle encore, notamment à cause des prompts. Une étude plus poussée des prompts s'est donc avéré pour obtenir des résultats satisfaisants.
 
 Un second aspect avec beaucoup d'importance est la langue. Les modèles d'embedding sont bien meilleurs lorsque la requête est en anglais, où ils arrivent plus facilement à trouver les bons fichiers (même si le fichier lui-même est dans une autre langue). Deux solutions s'offrent alors:
 - utiliser un modèle multilangue pouvant gérer le français
