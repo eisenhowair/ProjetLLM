@@ -6,7 +6,7 @@ from langchain.memory import ConversationBufferMemory
 
 from chainlit.types import ThreadDict
 
-from prep_message_chainlit_3prompts import *
+from prep_message_chainlit_prompts import *
 
 
 

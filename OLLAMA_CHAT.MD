@@ -11,6 +11,8 @@
         permet d'utiliser l'API REST de Ollama installé localement
 
 
+tous les programmes bénéficiant d'une interface de connexion ont "elias" comme nom d'utilisateur et mot de passe. Ces valeurs sont changeables dans la fonction auth_callback du programme lancé.
+
 ## Sources
 
 https://github.com/ollama/ollama/blob/main/docs/tutorials/langchainpy.md

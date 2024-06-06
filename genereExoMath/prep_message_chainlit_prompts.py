@@ -11,7 +11,7 @@ model = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 async def verifie_comprehension():
 
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
-    current_discussion = cl.user_session.get("memory_discussion")
+    current_discussion = cl.user_session.get("memory_discussion") # type: ConversationBufferMemory
 
     res = await cl.AskActionMessage(
         content="Avez-vous compris?",
@@ -91,7 +91,7 @@ def setup_exercice_model():
 
 
 @cl.step(type="run", name="runnable_corrige")
-def setup_corrige_model():
+def setup_corrige_model(): # version 3 prompts
     memory = cl.user_session.get("memory_discussion")  # type: ConversationBufferMemory
     if cl.user_session.get("tentatives") < 3:
         print("partie aide d'exercice")
@@ -141,7 +141,7 @@ def setup_corrige_model():
 
 
 @cl.step(type="run", name="aide réponse")
-def setup_aide_model():
+def setup_aide_model(): # version 2 prompts
     memory = cl.user_session.get("memory_discussion")  # type: ConversationBufferMemory
     
     prompt_corrige = ChatPromptTemplate.from_messages(
