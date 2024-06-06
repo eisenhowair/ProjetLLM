@@ -11,17 +11,6 @@ from IPython.display import Markdown, display
 
 
 """
-Temps pris pour génération de l'index:189.7270061969757
-Temps pris pour la réponse à la question:182.3755898475647
-instructor_large
-( chainlit ne met pas à jour ses messages ou envoie le message de la réponse, alors qu'il est bien récupéré)
-
-
-Temps pris pour génération de l'index:40.64496183395386
-Temps pris pour la réponse à la question:125.97727012634277
-mpnet-base-v2
-"""
-"""
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
 
@@ -54,10 +43,15 @@ async def start():
 
         ]
     ).send()
+    msg = cl.Message(content="Index en cours de chargement...", author="Préparation")
+    await msg.send()
+      
+    if recup_index() == -1:
+        msg = cl.Message(content="Pas d'index existant à charger", author="Préparation")
+    else :
+        msg = cl.Message(content="Index chargé!", author="Préparation")
 
-    await cl.Message(content="Index en cours de chargement...", author="Préparation").send()
-    recup_index()
-    await cl.Message(content="Index chargé!", author="Préparation").send()
+    await msg.send()
 
 
 @cl.on_message
@@ -98,6 +92,8 @@ async def main(message: cl.Message):
 def recup_index(settings=None):
 
     index, service_context = charge_index(settings=settings)
+    if index == -1:
+        return -1 # pas d'index existant lorsque lancement on_start
     query_engine = index.as_query_engine(
         streaming=True, similarity_top_k=4, service_context=service_context)
     langchain_prompt = hub.pull("rlm/rag-prompt")
@@ -117,6 +113,8 @@ def recup_index(settings=None):
     display_prompt_dict(query_engine.get_prompts())
     print("index bien chargé")
     cl.user_session.set("query_engine", query_engine)
+    
+    return 0
 
 
 @cl.on_settings_update
@@ -125,3 +123,6 @@ async def setup_agent(settings):
     recup_index(settings=settings)
     end = time.time()
     print(f"-----\nTemps pris pour génération de l'index:{end-start}")
+    msg = cl.Message(content=f"Index {settings['name']} chargé!", author="Préparation")
+
+    await msg.send()
