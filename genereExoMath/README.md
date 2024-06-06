@@ -7,7 +7,7 @@
 Le but des programmes de ce dossier est de mettre en place un générateur d'exercices de mathématiques, qui permet ensuite d'aider à la résolution 
 de l'exercice, en donnant des indices, ou en corrigeant l'exercice après un certain nombre de tentatives.
 
-Trois versions du programme existent, mais exo_math_3prompts.py sert de version la plus aboutie, avec _prep_message_chainlit_3prompts.py_ pour répartir le code.
+Trois versions du programme existent, mais exo_math_2prompts.py sert de version la plus aboutie, avec _prep_message_chainlit_prompts.py_ pour répartir le code.
 Les 2 autres fichiers de code représentent des tentatives, chacun avec ses défauts. 
 
 ### Installation
@@ -24,7 +24,7 @@ Les 2 autres fichiers de code représentent des tentatives, chacun avec ses déf
   ollama pull llama3:instruct
   ```
 
-3. Enfin, se créer un fichier .env avec les variables LITERAL_API_KEY et CHAINLIT_AUTH_SECRET, avec la première nécessitant de se créer un compte sur LiteralAI (puis aller dans Settings -> General Default Key), et la seconde qui est trouvable en tapant 
+3. Enfin, se créer un fichier .env avec les variables LITERAL_API_KEY et CHAINLIT_AUTH_SECRET, avec la première nécessitant de se créer un compte sur LiteralAI (puis aller dans Settings -> General -> Default Key), et la seconde qui est trouvable en tapant 
  ```sh
   chainlit create-secret
   ```
@@ -38,6 +38,8 @@ Au lancement du programme sont initialisées 2 variables servant de mémoire, l'
 qui retient les messages d'une discussion portant sur un exercice, et se vide dès lors que l'exercice change, pour que le modèle ait accès à un contexte au moment de répondre. Ces 2 variables sont enrichies à chaque parution de message, qu'il soit de l'utilisateur ou de l'IA. Un message demandant les loisirs de l'utilisateur apparait,
 et la réponse de l'utilisateur est enregistrée, car elle sera utilisée pour générer les exercices.
 
+Le fait de donner uniquement accès au modèle une mémoire de l'échange portant sur l'exercice actuel, et non pas sur les anciens en plus, permet de ne pas le surcharger, pour qu'il puisse répondre rapidement.
+
 ### Génération d'exercice
 
 La fonction setup_exercice_model() commence par récupérer la discussion actuelle, puis les loisirs de l'utilisateur. Elle va utiliser ses données, ainsi qu'un prompt spécifiquement écrit pour que le modèle soit à même de créer des exercices suivant certaines règles, et va les passer à un objet Runnable à renvoyer.
@@ -46,9 +48,9 @@ Le Runnable renvoyé est utilisé pour récupérer une réponse du modèle, qui 
 
 ### Résolution d'exercice
 
-La fonction setup_aide_model() récupère elle aussi la discussion en mémoire, puis renvoit un Runnable avec un prompt plus précis que lors de la génération, car c'est à partir de ce prompt que le modèle communiquera avec l'utilisateur la plupart du temps. Le prompt est censé aider l'utilisateur par le biais d'indices, sans toutefois donner la réponse, mais au bout d'un certain nombre de tentatives (3 ici), le modèle donne la réponse.
+La fonction setup_aide_model() récupère elle aussi la discussion en mémoire, puis renvoit un Runnable avec un prompt plus précis que lors de la génération, car c'est à partir de ce prompt que le modèle communiquera avec l'utilisateur la plupart du temps. Le prompt est censé aider l'utilisateur par le biais d'indices, sans toutefois donner la réponse, mais au bout d'un certain nombre de tentatives (3 ici), le modèle donne la réponse. Ce prompt se veut plus travaillé et nuancé que les autres, car sa compréhension par le modèle est essentielle, pour que le modèle ne donne pas tout de suite la réponse notamment.
 
-Une fois le message d'aide envoyé, la fonction verifie_comprenhension est appelée, demandant à l'utilisateur s'il a compris la réponse. Si oui, "compris" passe à True, et on rappelle le générateur, sinon, le modèle doit continuer de fournir des indices ou la réponse, suivant le nombre de tentatives.
+Une fois le message d'aide envoyé, la fonction verifie_comprehension est appelée, demandant à l'utilisateur s'il a compris la réponse. Si oui, "compris" passe à True, et on rappelle le générateur pour passer à un autre exercice. Sinon, le modèle doit continuer de fournir des indices ou la réponse, suivant le nombre de tentatives.
 
 En repassant au générateur, la mémoire courte est vidée.
 
@@ -59,6 +61,6 @@ Le programme dispose aussi de fonctions permettant de quitter la discussion pour
 
 ## Intérêt par rapport aux précédentes versions
 
-Le fichier exo_math_3prompts.py utilise un prompt pour aier l'utilisateur avec les indices, et un autre pour donner la réponse. Cela créait des malentendus dans certains cas, en plus de ne pas être très fluide.
+Le fichier exo_math_3prompts.py utilise un prompt pour aider l'utilisateur avec les indices, et un autre pour donner la réponse. Cela créait des malentendus dans certains cas, en plus de ne pas être très fluide.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

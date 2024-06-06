@@ -6,14 +6,11 @@ from langchain.memory import ConversationBufferMemory
 
 from chainlit.types import ThreadDict
 
-from prep_message_chainlit_3prompts import *
-
+from prep_message_chainlit_prompts import *
 
 
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
-    # Fetch the user matching username from your database
-    # and compare the hashed password with the value stored in the database
     if (username, password) == ("elias", "elias"):
         return cl.User(
             identifier="Elias", metadata={"role": "admin", "provider": "credentials"}
@@ -46,11 +43,10 @@ async def on_chat_start():
 
     cl.user_session.set("compris", True)
     cl.user_session.set("tentatives", 1)
-    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
-    cl.user_session.set("memory_discussion", ConversationBufferMemory(return_messages=True))
-
-
-
+    cl.user_session.set(
+        "memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set("memory_discussion",
+                        ConversationBufferMemory(return_messages=True))
 
 
 @cl.on_message
@@ -66,7 +62,8 @@ async def on_message(message: cl.Message):
         None : Envoie une réponse appropriée à l'utilisateur en fonction du contexte de la conversation.
     """
     memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
-    current_discussion = cl.user_session.get("memory_discussion")  # type: ConversationBufferMemory
+    current_discussion = cl.user_session.get(
+        "memory_discussion")  # type: ConversationBufferMemory
 
     if cl.user_session.get("age_niveau"):
         niveau_scolaire = str(cl.user_session.get("age_niveau"))+" ans"
@@ -90,6 +87,7 @@ async def on_message(message: cl.Message):
         cl.user_session.set("compris", False)
         await msg.send()
 
+        # on ajoute les messages à la mémoire globale et actuelle
         memory.chat_memory.add_user_message(message.content)
         memory.chat_memory.add_ai_message(msg.content)
         current_discussion.chat_memory.add_user_message(message.content)
@@ -104,7 +102,7 @@ async def on_message(message: cl.Message):
             {"question": message.content,
                 "dernier_exo": cl.user_session.get("dernier_exo"),
                 "niveau_scolaire": niveau_scolaire,
-                "tentatives":cl.user_session.get("tentatives")
+                "tentatives": cl.user_session.get("tentatives")
              },
             config=RunnableConfig(
                 callbacks=[cl.LangchainCallbackHandler()]),
