@@ -1,16 +1,5 @@
-
-  
-
-mpnet-base-v2 bien meilleur que instructor pour fouiller les dépôts github
-
-  
-  
-  
-  
-
 ## PR_Reviewer
 
-  
 
 ### 1. Introduction
 
