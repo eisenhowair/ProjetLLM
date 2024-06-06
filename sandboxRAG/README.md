@@ -1,3 +1,4 @@
+
 # RAG_moodle_ENT.py
 
 ## Introduction 
@@ -96,15 +97,15 @@ Ce programme permet de tester llama_index sans chainlit. Il a servi de base aux 
 
 # Autres
 
-## differents_textes 
+## differents_textes/
 
 Comporte plusieurs textes de longueur et type différent, pour vérifier le bon fonctionnement des indexs. C'est aussi dans ce dossier que les pdfs sont téléchargés depuis moodle, dans le dossier differents_textes/moodle.
 
-## brouillonRAG
+## brouillonRAG/
 
 Un dossier avec des programmes plus vieux, servant à tester le fonctionnement des différentes techonologies le long de ce projet. Certains programmes proviennent de Github ou de guides internet.
 
-## utils
+## utils/
 
 - **embedding_models.py** comporte le nom de plusieurs modèles d'embedding différents, ainsi que le chemin de leur index respectif. Ce fichier est utilisé dans plusieurs applications de ce projet.
 - **web_scraper.py** sert à récupérer les données des sites web en utilisant Selenium. Il est utilisé dans le fichier **RAG_moodle_ENT.py** mentionné plus haut.
@@ -112,7 +113,7 @@ Un dossier avec des programmes plus vieux, servant à tester le fonctionnement d
 - **modify_pdf_metadata** permet de "réparer" des fichiers pdfs auxquels il manquerait des métadata, ce qui pourrait affecter la qualité du RAG. Les métadata sont à mettre manuellement, avant de lancer le programme. Des exemples d'utilisation sont compris dans le fichier.
 - **compare_embedding_model.py** compare 5 modèles d'embedding, en posant une question, et regardant à quel point les modèles regardent dans les bons chunks pour trouver les réponses. Un graphique est ensuite affiché. Ce programme nécessite donc que les 5 modèles d'embedding aient un index, et peut donc nécessiter un certain temps si ce n'est pas le cas, et la quantité de documents à vectoriser est non négligeable.
 
-## screenshot_compare_embedding
+## screenshot_compare_embedding/
 
 Dans ce dossier vont tous les graphiques issus des comparaisons entre les différents modèles d'embedding.
 
