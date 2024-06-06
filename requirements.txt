@@ -12,5 +12,4 @@ llama-index-llms-ollama
 python-dotenv
 PyPDF2
 faiss-cpu
-selenium
 chromadb==0.3.29
