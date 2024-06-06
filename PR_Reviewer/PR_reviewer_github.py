@@ -25,16 +25,7 @@ REPO_OWNER = os.getenv("REPO_OWNER")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
-llm_local = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
-
-
-def get_diff(pull_number):
-    print("dans get_diff")
-
-    url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pull_number}/files'
-    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
-    response = requests.get(url, headers=headers)
-    return response.json()
+llm_local = Ollama(base_url="http://localhost:11434", model="codegemma:7b-code")
 
 
 def get_pull_requests():
@@ -46,14 +37,20 @@ def get_pull_requests():
     return response.json()
 
 
+def get_diff(pull_number):
+    print("dans get_diff")
+
+    url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pull_number}/files'
+    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+
 def generate_comment(diff_files):
     print("dans generate_comment")
 
-    # Simulation de l'appel au modèle Ollama
-    # Ici, on suppose que Ollama a une fonction `analyze_diff` qui prend les différences et génère un commentaire
-
     system_instructions = """
-    Vous êtes un assistant développeur français. Évaluez les changements dans le code en termes de qualité, de bonnes pratiques, et de performance. Fournissez une analyse détaillée et des recommandations spécifiques.
+    Vous êtes un assistant développeur français. Évaluez les changements dans les fichiers de code en termes de qualité, de bonnes pratiques, et de performance. Fournissez une analyse détaillée et des recommandations spécifiques.
     """
 
     prompt_template = PromptTemplate(

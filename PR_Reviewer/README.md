@@ -22,10 +22,11 @@ base_function()
 ## PR_Reviewer
 
 ### 1. Introduction
-Dans cette section, tu pourras expliquer ce qu'est le script **PR_Reviewer**. Parle de son but, de son utilité et du contexte dans lequel il est utilisé.
+Le **PR_Reviewer** permet d'appeler un modèle pour commenter les Pull Request effectuées sur Gituhb directement.
 
-**Exemple :**
-Le script **PR_Reviewer** est conçu pour automatiser la revue des Pull Requests (PR) sur GitHub. Il analyse les changements proposés, identifie les erreurs potentielles et fournit des recommandations pour améliorer le code. Cela facilite le processus de revue de code en réduisant le temps et l'effort nécessaires.
+### 2. Fonctionnement
+
+
 
 ### 2. Difficultés rencontrées
 Ici, tu pourras décrire les défis et les problèmes que tu as rencontrés lors de la création de **PR_Reviewer**. Parle des aspects techniques ou des obstacles que tu as dû surmonter.

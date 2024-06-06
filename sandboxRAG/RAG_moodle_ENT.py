@@ -4,7 +4,7 @@ from numpy import vectorize
 from utils.manip_documents import *
 from utils.web_scraper import *
 from chainlit.types import ThreadDict
-
+from chainlit.input_widget import TextInput, Select
 
 from langchain_community.vectorstores import FAISS
 from langchain.schema.runnable.config import RunnableConfig
@@ -15,9 +15,6 @@ from langchain.memory import ConversationBufferMemory
 
 from operator import itemgetter
 from typing import List
-
-
-from chainlit.input_widget import TextInput, Select
 
 
 @cl.password_auth_callback
@@ -50,7 +47,8 @@ def setup_model():
 
     runnable_exercice = (
         RunnablePassthrough.assign(
-            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
+            history=RunnableLambda(
+                memory.load_memory_variables) | itemgetter("history")
         )
         | prompt_exercice
         | model
@@ -64,7 +62,6 @@ def trouve_contexte(question):
     retriever = cl.user_session.get("retriever")
     search_results = retriever.vectorstore.similarity_search(question, k=10)
 
-    # Utiliser un dictionnaire pour regrouper les chunks par source
     results_by_source = {}
     for result in search_results:
         source = result.metadata["source"]
@@ -75,10 +72,12 @@ def trouve_contexte(question):
     # sources différentes
     relevant_sources = list(results_by_source.keys())[:3]
     # chunks par source
-    relevant_results = [results_by_source[source][:10] for source in relevant_sources]
+    relevant_results = [results_by_source[source][:10]
+                        for source in relevant_sources]
 
     # Aplatir la liste des résultats
-    relevant_results = [chunk for sublist in relevant_results for chunk in sublist]
+    relevant_results = [
+        chunk for sublist in relevant_results for chunk in sublist]
 
     filenames = [result.metadata["source"] for result in relevant_results]
     short_filenames = [os.path.basename(file) for file in filenames]
@@ -97,7 +96,7 @@ def trouve_contexte(question):
 
 @cl.on_chat_start
 async def factory():
-    settings = await cl.ChatSettings(
+    await cl.ChatSettings(
         [
             TextInput(
                 id="addDocuments",
@@ -117,7 +116,8 @@ async def factory():
             ),
         ]
     ).send()
-    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
+    cl.user_session.set(
+        "memory", ConversationBufferMemory(return_messages=True))
     cl.user_session.set("nom_model", "instructor-large")
 
     charge_index(index_path, embeddings)
@@ -204,7 +204,8 @@ async def setup_agent(settings):
     charge_index(index_path_t, embeddings_t)
     cl.user_session.set("nom_model", settings["model"])
     if settings["addDocuments"] is not None:
-        add_files_to_index(index_path_t, embeddings_t, settings["addDocuments"])
+        add_files_to_index(index_path_t, embeddings_t,
+                           settings["addDocuments"])
         settings["addDocuments"] = ""
 
 

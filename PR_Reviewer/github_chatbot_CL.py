@@ -31,7 +31,9 @@ def auth_callback(username: str, password: str):
         )
     else:
         return None
-"""        
+"""
+
+
 def display_prompt_dict(prompts_dict):
     for k, p in prompts_dict.items():
         text_md = f"**Prompt Key**: {k}<br>" f"**Text:** <br>"
@@ -52,11 +54,10 @@ async def start():
 
         ]
     ).send()
-    
+
     await cl.Message(content="Index en cours de chargement...", author="Préparation").send()
     recup_index()
     await cl.Message(content="Index chargé!", author="Préparation").send()
-    
 
 
 @cl.on_message
@@ -64,7 +65,8 @@ async def main(message: cl.Message):
     question = message.content
     print("Question:" + question)
     start = time.time()
-    query_engine = cl.user_session.get("query_engine")  # type: RetrieverQueryEngine
+    query_engine = cl.user_session.get(
+        "query_engine")  # type: RetrieverQueryEngine
 
     msg = cl.Message(content="", author="connexion nwaaaar")
 
@@ -92,8 +94,6 @@ async def main(message: cl.Message):
     end = time.time()
     print(f"-----\nTemps pris pour la réponse à la question: {end - start}")
 
-    
-
 
 def recup_index(settings=None):
 
@@ -101,11 +101,12 @@ def recup_index(settings=None):
     query_engine = index.as_query_engine(
         streaming=True, similarity_top_k=4, service_context=service_context)
     langchain_prompt = hub.pull("rlm/rag-prompt")
-    
+
     display_prompt_dict(query_engine.get_prompts())
     lc_prompt_tmpl = LangchainPromptTemplate(
-        template=PromptTemplate.from_template(template=create_prompt_simplifie()),
-        #template=langchain_prompt,
+        template=PromptTemplate.from_template(
+            template=create_prompt_simplifie()),
+        # template=langchain_prompt,
         template_var_mappings={
             "query_str": "question", "context_str": "context"},
     )
