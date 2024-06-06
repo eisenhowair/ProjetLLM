@@ -1,8 +1,9 @@
 import os
 import chainlit as cl
 from numpy import vectorize
-from utils.manip_documents import *
-from utils.web_scraper import *
+from operator import itemgetter
+from typing import List
+
 from chainlit.types import ThreadDict
 from chainlit.input_widget import TextInput, Select
 
@@ -13,9 +14,8 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 from langchain.memory import ConversationBufferMemory
 
-from operator import itemgetter
-from typing import List
-
+from utils.manip_documents import *
+from utils.web_scraper import *
 
 @cl.password_auth_callback
 def auth_callback(username: str, password: str):
