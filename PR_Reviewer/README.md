@@ -5,8 +5,16 @@
 
 Le **PR_Reviewer** permet d'appeler un modèle pour commenter les Pull Request effectuées sur Gituhb directement.
 
-  
+Il nécessite les dépendances du fichier **requirements.txt** à la racine de ce dépôt, ainsi que celles du fichier **requirements.txt** dans ce dossier.
+De plus, avoir installé ollama (par exemple via le fichier **setup.sh**), et récupéré le modèle llama3:instruct est nécessaire.
+```py
+pip install -r ../requirements.txt
+pip install -r requirements.txt
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3:instruct
+```
 
+  
 ### 2. Fonctionnement
 
 
