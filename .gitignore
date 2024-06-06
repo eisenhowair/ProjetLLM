@@ -1,15 +1,11 @@
 lib64
 elastic_search_info.txt
 __pycache__
-essaiRAG
 .chainlit
-index.py
-data
 .files
 .env
-example.ini
 .vscode
+tools
 sandboxRAG/differents_textes/moodle
-sandboxRAG/llama_index/*
-sandboxRAG/vectorstores/llama_index_mpnet/*
 vectorstores/
+chainlit.md

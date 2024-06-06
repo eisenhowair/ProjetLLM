@@ -11,7 +11,13 @@ https://lightning.ai/lightning-ai/studios/chat-with-your-code-using-rag (a donn�
 mpnet-base-v2 bien meilleur que instructor pour fouiller les dépôts github
 
 
+```py
+from project_name import BaseClass
+from project_name import base_function
 
+BaseClass().base_method()
+base_function()
+```
 
 ## PR_Reviewer
 
@@ -39,3 +45,5 @@ Pour utiliser **PR_Reviewer**, suivez les étapes suivantes :
 1. Clonez le dépôt :
    ```sh
    git clone https://github.com/votrecompte/PR_Reviewer.git
+
+
