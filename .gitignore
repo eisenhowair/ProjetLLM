@@ -9,3 +9,5 @@ tools
 sandboxRAG/differents_textes/moodle
 vectorstores/
 chainlit.md
+data
+config
