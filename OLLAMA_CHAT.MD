@@ -13,6 +13,12 @@
 
 tous les programmes bénéficiant d'une interface de connexion ont "elias" comme nom d'utilisateur et mot de passe. Ces valeurs sont changeables dans la fonction auth_callback du programme lancé.
 
+attention car si un programme utilisant un index a un problème pendant la création dudit index, le dossier contenant l'index aura été crée, mais vide. De ce fait, le programme, lors de sa prochaine exécution, va penser que l'index existe car le dossier existe, ce qui n'est pas le cas. Il renverra donc une erreur de type:
+```bash
+ValueError: No existing llama_index.vector_stores.faiss.base found at vectorstores/llama_index_mpnet/default__vector_store.json.
+```
+Pour éviter cette erreur, il est généralement plus simple de supprimer le dossier vide.
+
 ## Sources
 
 https://github.com/ollama/ollama/blob/main/docs/tutorials/langchainpy.md
