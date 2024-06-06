@@ -25,7 +25,7 @@ REPO_OWNER = os.getenv("REPO_OWNER")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
-llm_local = Ollama(base_url="http://localhost:11434", model="codegemma:7b-code")
+llm_local = Ollama(base_url="http://localhost:11434", model="codegemma:7b")
 
 
 def get_pull_requests():
