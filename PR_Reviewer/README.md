@@ -38,6 +38,8 @@ Le **PR_Reviewer** permet d'appeler un modèle pour commenter les Pull Request e
 
 ### 2. Fonctionnement
 
+De par son utilisation de l'API Github, ce programme nécessite un fichier .env placé à son niveau, comportant les champs indiqués dans le .env.example, à savoir le nom du dépôt ciblé, son possesseur, et votre token Github pour avoir le droit d'utiliser l'API.
+ 
 Le programme est divisé en 3 fonctions importantes.
 
   
@@ -70,8 +72,7 @@ ngrok http 5000 # peut nécessiter un sudo
 ```
 - après que l'écran noir de ngrok soit apparu, une url sera proposée à droite. C'est cette url, à laquelle il faudra rajouter "/webhook", qu'il faudra entrer dans le webhook de Github.
 
-<code style="color : orangered">text</code>
-
+# Attention, l'url de ngrok change quotidiennement pour la version gratuite, il faut donc penser à mettre à jour l'url du webhook sur Github à chaque fois avec la nouvelle url fournie par ngrok.
   
 
 ### 2. Difficultés rencontrées
@@ -107,3 +108,5 @@ Pour utiliser **PR_Reviewer**, suivez les étapes suivantes :
 1. Clonez le dépôt :
 
 ```sh
+
+git clone https://github.com/votrecompte/PR_Reviewer.git
