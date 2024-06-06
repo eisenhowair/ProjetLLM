@@ -3,10 +3,9 @@ import{b as n}from"../../../browser-polyfill-CDoadmtY.js";
 const o="llama3:8b";
 
 n.runtime.onInstalled.addListener(()=>{
-	console.log("Extension installedddd")});
+	console.log("Extension installed")});
 	n.runtime.onMessage.addListener((e,s,t)=> {
     console.log(e.tweet);
-    console.log("main ton=",e.ton);
 
     let r = `Vous êtes un assistant IA français. Vous devez répondre au e-mails sur un ton ${e.ton}. `;
 
@@ -15,8 +14,6 @@ n.runtime.onInstalled.addListener(()=>{
       Indications :
       ${e.indications}`;
     }
-
-    console.log(r);
 
 		if(e.action==="fetchResponse")
 			return i(e.tweet, r).then(a=>{
