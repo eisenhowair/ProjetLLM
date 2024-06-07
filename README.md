@@ -1,4 +1,4 @@
-<h3 align="center">Projet "Personnalisation de grands modèles de langage"</h3>
+<h3 align="center">Projet "Personnalisation et déploiement de modèles de langage"</h3>
 <p align="center">Le but de ce projet est de découvrir les différentes manières de personnaliser un modèles de langage.</p>
 <br/>
 
