@@ -17,9 +17,9 @@ ollama pull llama3:instruct
 
 2nd version : Le programme fonctionne maintenant avec chainlit, et ne met que 3 minutes à répondre aux questions, en se basant sur un index composé de plusieurs fichiers de taille et type variable. Le modèle d'embedding n'est plus nomic-embed-text, qui faisait trop d'erreur dans sa sélection de documents, mais aussi de chunks, mais instructor-large, qui est bien plus consistant. L'index est stocké localement pour ne pas avoir à le recréer à chaque exécution du programme.
 
-A été ajouté un système de connexion permettant de consulter les anciennes conversations, ainsi que de suivre l'exécution des requêtes via literal.ai (en ayant un fichier .env correspondant aux attentes demandées par le README dans modele_personnalise)
+A été ajouté un système de connexion permettant de consulter les anciennes conversations, ainsi que de suivre l'exécution des requêtes via literal.ai (en ayant un fichier .env correspondant aux attentes demandées dans le chapitre suivant)
 
-3rd version (latest) : Le programme a maintenant une mémoire lui permettant de se souvenir des messages d'une conversation, permettant d'avoir une véritable discussion. En plus de ça, l'index se génère en se basant sur plusieurs page web, ainsi que les différents cours disponibles sur moodle, en utilisant BeautifulSoup et Selenium. Les différents fichiers sur moodle sont téléchargés dans le dossier differents_textes/moodle (attention car il utilise un chemin absolu (voir **webscraper.py**)). Il est aussi possible de choisir parmi plusieurs modèles d'embedding dans les options chainlit.
+3rd version (latest) : Le programme a maintenant une mémoire lui permettant de se souvenir des messages d'une conversation, permettant d'avoir une véritable discussion. En plus de ça, l'index se génère en se basant sur plusieurs page web, ainsi que les différents cours disponibles sur moodle, en utilisant BeautifulSoup et Selenium. Les différents fichiers sur moodle sont téléchargés dans le dossier differents_textes/moodle (attention car il utilise un chemin absolu, voir **webscraper.py**). Il est aussi possible de choisir parmi plusieurs modèles d'embedding dans les options chainlit mises en place.
 
 ## Fonctionnalités plus précises
 
@@ -174,6 +174,8 @@ https://www.reddit.com/r/LangChain/comments/1ba77pu/difference_between_as_retrie
 ### Articles 
 
 https://towardsdatascience.com/openai-vs-open-source-multilingual-embedding-models-e5ccb7c90f05
+
+https://medium.com/@fabio.matricardi/metadata-metamorphosis-from-plain-data-to-enhanced-insights-with-retrieval-augmented-generation-8d1a8d5a6061 (metadata)
 
 https://docs.llamaindex.ai/en/stable/examples/prompts/prompts_rag/ (pour gérer des prompts avec llama_index)
 
