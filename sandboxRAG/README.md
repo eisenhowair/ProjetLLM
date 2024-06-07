@@ -19,7 +19,7 @@ ollama pull llama3:instruct
 
 A été ajouté un système de connexion permettant de consulter les anciennes conversations, ainsi que de suivre l'exécution des requêtes via literal.ai (en ayant un fichier .env correspondant aux attentes demandées dans le chapitre suivant)
 
-3rd version (latest) : Le programme a maintenant une mémoire lui permettant de se souvenir des messages d'une conversation, permettant d'avoir une véritable discussion. En plus de ça, l'index se génère en se basant sur plusieurs page web, ainsi que les différents cours disponibles sur moodle, en utilisant BeautifulSoup et Selenium. Les différents fichiers sur moodle sont téléchargés dans le dossier differents_textes/moodle (attention car il utilise un chemin absolu (voir **webscraper.py**)). Il est aussi possible de choisir parmi plusieurs modèles d'embedding dans les options chainlit.
+3rd version (latest) : Le programme a maintenant une mémoire lui permettant de se souvenir des messages d'une conversation, permettant d'avoir une véritable discussion. En plus de ça, l'index se génère en se basant sur plusieurs page web, ainsi que les différents cours disponibles sur moodle, en utilisant BeautifulSoup et Selenium. Les différents fichiers sur moodle sont téléchargés dans le dossier differents_textes/moodle (attention car il utilise un chemin absolu, voir **webscraper.py**). Il est aussi possible de choisir parmi plusieurs modèles d'embedding dans les options chainlit mises en place.
 
 ## Fonctionnalités plus précises
 
