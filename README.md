@@ -42,17 +42,6 @@ https://github.com/sudarshan-koirala/langchain-ollama-chainlit/blob/main/simple_
 
 https://medium.com/@tahreemrasul/building-a-chatbot-application-with-chainlit-and-langchain-3e86da0099a6 ( pour utiliser la ConversationBufferMemory)
 
-#### Llama2 Chat Integration (`llama2-chat.py`)
-
-- `load_llama`: Loads the Llama2 model from HuggingFace with the specified tokenizer and streamer.
-- `main` (decorated with `@cl.on_chat_start`): Initializes the LLM chain with a prompt for answering questions.
-- `run`: Processes incoming messages and provides responses using the LLM chain.
-
-- dans terminal:
-    huggingface-cli login
-    sur machine de la fac:
-    /home/UHA/e2303253/.local/bin/huggingface-cli login
-
 
 - mettre le token généré depuis le profil huggingface
 
