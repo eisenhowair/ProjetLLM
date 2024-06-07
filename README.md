@@ -71,7 +71,7 @@ Suivez ces étapes pour mettre en place le projet.
 Depuis la racine du projet :
 
 1.  Installez les modules python :
-	- `pip insall -r requirements.txt`
+	- `pip install -r requirements.txt`
 2. Installez Ollama et récupérer le modèle
 	- `curl -fsSL https://ollama.com/install.sh | sh`  (source : [Ollama](https://ollama.com/download))
 	- `ollama pull llama3:instruct`
