@@ -175,6 +175,8 @@ https://www.reddit.com/r/LangChain/comments/1ba77pu/difference_between_as_retrie
 
 https://towardsdatascience.com/openai-vs-open-source-multilingual-embedding-models-e5ccb7c90f05
 
+https://medium.com/@fabio.matricardi/metadata-metamorphosis-from-plain-data-to-enhanced-insights-with-retrieval-augmented-generation-8d1a8d5a6061 (metadata)
+
 https://docs.llamaindex.ai/en/stable/examples/prompts/prompts_rag/ (pour gérer des prompts avec llama_index)
 
 https://www.pinecone.io/learn/openai-embeddings-v3/
