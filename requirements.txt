@@ -4,7 +4,6 @@ langchain==0.1.20
 langchain_community
 chainlit
 accelerate
-openai
 sentence-transformers
 llama-index 
 llama-index-embeddings-ollama
