@@ -1,4 +1,4 @@
-
+<a name="readme-top"></a>
 # RAG_moodle_ENT.py
 
 ## Introduction 
@@ -117,6 +117,17 @@ Un dossier avec des programmes plus vieux, servant à tester le fonctionnement d
 
 Dans ce dossier vont tous les graphiques issus des comparaisons entre les différents modèles d'embedding.
 
+# Embedding
+
+En changeant le modèle d'embedding, les résultats se sont améliorés (voir les différents graphiques comparant les modèles utilisés), mais le modèle peine tout de même à utiliser les bons chunks pour générer sa réponse, et s'emmêle encore, notamment à cause des prompts. Une étude plus poussée des prompts s'est donc avéré pour obtenir des résultats satisfaisants.
+
+Un second aspect avec beaucoup d'importance est la langue. Les modèles d'embedding sont bien meilleurs lorsque la requête est en anglais, où ils arrivent plus facilement à trouver les bons fichiers (même si le fichier lui-même est dans une autre langue). Deux solutions s'offrent alors:
+- utiliser un modèle multilangue pouvant gérer le français
+- traduire automatiquement les requêtes des utilisateurs
+
+Au final, le modèle d'embedding instructor-large est bien meilleur que même les modèles pourtant en théorie mieux adapté au français.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 # Sources
 
@@ -148,16 +159,6 @@ https://blog.gopenai.com/building-a-rag-chatbot-using-llamaindex-groq-with-llama
 https://aws.amazon.com/fr/what-is/retrieval-augmented-generation/
 
 https://hackernoon.com/fr/un-tutoriel-sur-la-fa%C3%A7on-de-cr%C3%A9er-votre-propre-chiffon-et-de-l%27ex%C3%A9cuter-localement-langchain-ollama-streamlit
-
-# Embedding
-
-En changeant le modèle d'embedding, les résultats se sont améliorés(voir les différents graphiques comparant les modèles utilisés), mais le modèle peine tout de même à utiliser les bons chunks pour générer sa réponse, et s'emmêle encore, notamment à cause des prompts. Une étude plus poussée des prompts s'est donc avéré pour obtenir des résultats satisfaisants.
-
-Un second aspect avec beaucoup d'importance est la langue. Les modèles d'embedding sont bien meilleurs lorsque la requête est en anglais, où ils arrivent plus facilement à trouver les bons fichiers (même si le fichier lui-même est dans une autre langue). Deux solutions s'offrent alors:
-- utiliser un modèle multilangue pouvant gérer le français
-- traduire automatiquement les requêtes des utilisateurs
-
-Au final, le modèle d'embedding instructor-large est bien meilleur que même les modèles pourtant en théorie mieux adapté au français.
 
 ## Sources concernant l'embedding
 

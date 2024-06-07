@@ -34,11 +34,7 @@ Les 2 autres fichiers de code représentent des tentatives, chacun avec ses déf
 
 ### Initialisation du programme
 
-Au lancement du programme sont initialisées 2 variables servant de mémoire, l'une globale, qui sera utile pour quitter la discussion et y revenir, et une plus courte,
-qui retient les messages d'une discussion portant sur un exercice, et se vide dès lors que l'exercice change, pour que le modèle ait accès à un contexte au moment de répondre. Ces 2 variables sont enrichies à chaque parution de message, qu'il soit de l'utilisateur ou de l'IA. Un message demandant les loisirs de l'utilisateur apparait,
-et la réponse de l'utilisateur est enregistrée, car elle sera utilisée pour générer les exercices.
-
-Le fait de donner uniquement accès au modèle une mémoire de l'échange portant sur l'exercice actuel, et non pas sur les anciens en plus, permet de ne pas le surcharger, pour qu'il puisse répondre rapidement.
+Au lancement du programme, 2 variables sont initialisées pour la mémoire : une globale pour quitter et revenir à la discussion, une courte pour la conversation en cours. Ces variables sont enrichies à chaque message pour générer des exercices, sans surcharger le modèle.
 
 ### Génération d'exercice
 
@@ -48,11 +44,8 @@ Le Runnable renvoyé est utilisé pour récupérer une réponse du modèle, qui 
 
 ### Résolution d'exercice
 
-La fonction setup_aide_model() récupère elle aussi la discussion en mémoire, puis renvoit un Runnable avec un prompt plus précis que lors de la génération, car c'est à partir de ce prompt que le modèle communiquera avec l'utilisateur la plupart du temps. Le prompt est censé aider l'utilisateur par le biais d'indices, sans toutefois donner la réponse, mais au bout d'un certain nombre de tentatives (3 ici), le modèle donne la réponse. Ce prompt se veut plus travaillé et nuancé que les autres, car sa compréhension par le modèle est essentielle, pour que le modèle ne donne pas tout de suite la réponse notamment.
 
-Une fois le message d'aide envoyé, la fonction verifie_comprehension est appelée, demandant à l'utilisateur s'il a compris la réponse. Si oui, "compris" passe à True, et on rappelle le générateur pour passer à un autre exercice. Sinon, le modèle doit continuer de fournir des indices ou la réponse, suivant le nombre de tentatives.
-
-En repassant au générateur, la mémoire courte est vidée.
+La fonction setup_aide_model() prépare les prompts spécifiques pour aider l'utilisateur et permet au modèle de communiquer efficacement. Après plusieurs tentatives (infructueuses) où le modèle a donné des indices pour aider,il donne la réponse. La fonction verifie_comprehension demande si l'utilisateur a compris et passe au prochain exercice. Ensuite, la mémoire courte est réinitialisée.
 
 ### Autres
 

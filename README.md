@@ -1,4 +1,4 @@
-<h3 align="center">Projet "Personnalisation de grands modèles de langage"</h3>
+<h3 align="center">Projet "Personnalisation et déploiement de modèles de langage"</h3>
 <p align="center">Le but de ce projet est de découvrir les différentes manières de personnaliser un modèles de langage.</p>
 <br/>
 
@@ -71,7 +71,7 @@ Suivez ces étapes pour mettre en place le projet.
 Depuis la racine du projet :
 
 1.  Installez les modules python :
-	- `pip insall -r requirements.txt`
+	- `pip install -r requirements.txt`
 2. Installez Ollama et récupérer le modèle
 	- `curl -fsSL https://ollama.com/install.sh | sh`  (source : [Ollama](https://ollama.com/download))
 	- `ollama pull llama3:instruct`
