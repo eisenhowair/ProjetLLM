@@ -1,225 +1,165 @@
-import time
-from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
-from langchain_core.prompts import PromptTemplate
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-#from langchain.schema import Document
 from langchain_community.document_loaders import TextLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+from langchain_core.output_parsers import StrOutputParser
+
+from langchain.docstore.document import Document
 from langchain.storage import InMemoryStore
 from langchain.retrievers import ParentDocumentRetriever
-from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema.runnable.config import RunnableConfig
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
+from langchain.memory import ConversationBufferMemory
 
-llm_local = Ollama(base_url="http://localhost:11434", model="llama3:8b")
-embedding = OllamaEmbeddings(base_url="http://localhost:11434", model="nomic-embed-text")
+import PyPDF2
+from operator import itemgetter
+import unicodedata
+import re
+
+import chainlit as cl
 
 
-start = time.time()#
+llm_local = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
-file_paths = ["./liam.txt", "./emma.txt", "./ammamellen.txt", "donnees_uni_test.txt"]
-doc_ids = {file_path: i for i, file_path in enumerate(file_paths)}
+embedding_model="hkunlp/instructor-large"
+embedding = HuggingFaceEmbeddings(model_name=embedding_model)
 
-# Texte Loader
-def load_documents(file_paths):
+
+
+def clean_text(text):
+    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+    return text
+
+def load_pdf_as_document(file_path, name=None):
+    pdf = PyPDF2.PdfReader(file_path)
+    pdf_text = ""
+    for page in pdf.pages:
+        pdf_text += page.extract_text()
+    source = name if name else file_path
+    pdf_text = clean_text(pdf_text)
+    return Document(page_content=pdf_text, metadata={"source": source})
+
+
+
+@cl.on_chat_start
+async def factory():
+
+    files = None
+
+    while files == None:
+        files = await cl.AskFileMessage(
+            content="Please upload pdf files (max 5)", accept=["pdf"], max_files=5
+        ).send()
+
     docs = []
-    for file_path in file_paths:
-        loader = TextLoader(file_path)
-        data = loader.load()
-        docs.extend(data)
-    return docs
-
-docs = load_documents(file_paths)
-
-
-
-
-
-#PDFLoader
-# import PyPDF2
-
-# def load_pdf_as_document(file_path):
-#     pdf = PyPDF2.PdfReader(file_path)
-#     pdf_text = ""
-#     for page in pdf.pages:
-#         pdf_text += page.extract_text()
-#     return Document(page_content=pdf_text, metadata={"source": file_path})
-
-# pdf_doc1 = load_pdf_as_document("liam.pdf")
-# pdf_doc2 = load_pdf_as_document("emma.pdf")
-# pdf_doc3 = load_pdf_as_document("ammamellen.pdf")
-
-# docs = [pdf_doc1, pdf_doc2, pdf_doc3]
-
-
-#JSON Loader
-# import json
-# def load_json_as_document(file_path):
-#     with open(file_path, 'r', encoding='utf-8') as f:
-#         json_data = json.load(f)
-#         json_text = json.dumps(json_data, ensure_ascii=False, indent=2)
-#     return Document(page_content=json_text, metadata={"source": file_path})
-
-# jsonDoc = load_json_as_document("horaires_uha.json")
-# jsonDoc2 = load_json_as_document("horaires_magasins_mulhouse.json")
-# docs = [jsonDoc, jsonDoc2]
-
-
-end = time.time()#
-timee = end - start#
-print("Chargement de tous les documents=",timee)#
-
-
-
-
-###SIMILARITY_SEARCH
-start = time.time()#
-
-child_splitter = RecursiveCharacterTextSplitter(chunk_size=120, chunk_overlap=20)
-
-parent_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
-
-
-vectorstore = Chroma(
-    collection_name="full_documents", embedding_function=embedding
-)
-
-###################################################
-store = InMemoryStore()
-retriever = ParentDocumentRetriever(
-    vectorstore=vectorstore,
-    docstore=store,
-    child_splitter=child_splitter,
-    parent_splitter=parent_splitter
-)
-
-# ids_docs = [doc_ids[doc.metadata['source']] for doc in docs]
-
-
-retriever.add_documents(docs, ids=None)
-
-end = time.time()#
-timee = end - start#
-print("embedding similarity_search=",timee)#
-
-
-
-
-start = time.time()#
-
-res_similarity_search = vectorstore.similarity_search("Quelles sont les horaires de la Bibliothèque universitaire  ?")
-
-end = time.time()#
-timee = end - start#
-print("similarity_search()=",timee)#
-
-
-start = time.time()#  
-
-sources = set()
-
-for block in res_similarity_search:
-    sources.add(block.metadata["source"])
-
-#
-print("Sources :")
-for b in sources:
-    print(b)
-
-relevant_docs = [doc for doc in docs if doc.metadata['source'] in sources]
-
-
-print(relevant_docs)
-
-
-####INVOKE
+    for file in files:
+        doc_pdf = load_pdf_as_document(file.path, file.name)
+        docs.append(doc_pdf)
     
-#load relevants documents
-docs = []
+    msg = cl.Message(content="")
+    await msg.send()
 
-#txt
-for source in sources:
-    loader = TextLoader(source)
-    data = loader.load()
-    docs.extend(data)
+    cl.user_session.set("memory", ConversationBufferMemory(return_messages=True))
 
-#pdf
-# for source in sources:
-#     data = load_pdf_as_document(source)
-#     docs.append(data)
+    child_splitter = RecursiveCharacterTextSplitter(chunk_size=120, chunk_overlap=20)
 
-#json
-# for source in sources:
-#     data = load_json_as_document(source)
-#     docs.append(data)
+    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
+
+    vectorstore = Chroma(collection_name="full_documents", embedding_function=embedding)
+
+    store = InMemoryStore()
+    retriever = ParentDocumentRetriever(
+        vectorstore=vectorstore,
+        docstore=store,
+        child_splitter=child_splitter,
+        parent_splitter=parent_splitter,
+    )
+
+    retriever.add_documents(docs, ids=None)
+
+    cl.user_session.set("retriever", retriever)
+    cl.user_session.set("vectorstore", vectorstore)
+
+    msg.content = "Entrez votre question !"
+    await msg.update()
 
 
+@cl.step(type="retrieval", name="similarity search avec retriever")
+def sim_search(question):
 
-
-
-end = time.time()#
-timee = end - start#
-print("Chargement des documents pertinents=",timee)#
-
-
-
-start = time.time()#    
+    vectorstore = cl.user_session.get("vectorstore")
+    retriever = cl.user_session.get("retriever")
     
-child_splitter = RecursiveCharacterTextSplitter(chunk_size=120, chunk_overlap=20)
+    res_similarity_search = vectorstore.similarity_search(question)
+    res_invoke = retriever.invoke(question)
 
-parent_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=20)
+    
+    sources = set()
 
+    for block in res_similarity_search:
+        sources.add(block.metadata["source"])
 
-vectorstore = Chroma(
-    collection_name="relevants_documents", embedding_function=embedding
-)
+    for block in res_invoke:
+        sources.add(block.metadata["source"])
 
-store = InMemoryStore()
-retriever = ParentDocumentRetriever(
-    vectorstore=vectorstore,
-    docstore=store,
-    child_splitter=child_splitter,
-    parent_splitter=parent_splitter
-)
+    print("Sources :")
+    for b in sources:
+        print(b)
 
-retriever.add_documents(docs, ids=None)
-
-end = time.time()#
-timee = end - start#
-print("embedding invoke=",timee)#
+    return res_similarity_search + res_invoke
 
 
-start = time.time()#
+@cl.step(type="run", name="Mise en place du Runnable")
+def setup_model():
+    memory = cl.user_session.get("memory")  # type: ConversationBufferMemory
 
-res_invoke = retriever.invoke("Quelles sont les horaires de la Bibliothèque universitaire  ?")
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """{sys_instruction}\n\nPrompt: {prompt}""",
+            ),
+            MessagesPlaceholder(variable_name="history"),
+        ]
+    )
 
-end = time.time()#
-timee = end - start#
-print("invoke()=",timee)#
+    runnable_exercice = (
+        RunnablePassthrough.assign(
+            history=RunnableLambda(memory.load_memory_variables) | itemgetter("history")
+        )
+        | prompt
+        | llm_local
+        | StrOutputParser()
+    )
+    return runnable_exercice
 
 
-start = time.time()#
+@cl.on_message
+async def main(message):
 
+    memory = cl.user_session.get("memory")
 
-system_instructions = """
-Vous êtes un assistant français. Votre but est de répondre aux questions à l'aide des Sources qu'on vous donnent.
-"""
+    runnable_model = setup_model()
+    res_invoke = sim_search(message.content)
+    prompt = message.content + " \nSources :"
+    for r in res_invoke:
+        prompt += r.page_content
 
-prompt_template = PromptTemplate(
-    template="{instructions}\n\nPrompt: {prompt}",
-    input_variables=["instructions", "prompt"],
-)
+    system_instructions = """
+    Vous êtes un assistant français. 
+    Vous devez répondre uniquement à l'aide des [[sources]] qu'on vous donne.
+    """
 
-prompt = "Quelles sont les horaires de la Bibliothèque universitaire  ? Sources :"
-for r in res_invoke:
-    prompt += r.page_content
+    msg = cl.Message(content="")
+    async for chunk in runnable_model.astream(
+        {"sys_instruction": system_instructions, "prompt": prompt},
+        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+    ):
+        await msg.stream_token(chunk)
 
-print(prompt)
-
-full_prompt = prompt_template.format(instructions=system_instructions, prompt=prompt)
-response = llm_local.generate([full_prompt])
-
-end = time.time()#
-timee = end - start#
-print("Chargement modèle et génération réponse=",timee)#
-
-print(response.generations[0][0].text)
+    await msg.send()
