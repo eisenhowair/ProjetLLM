@@ -13,7 +13,7 @@
 
 permet d'utiliser l'API REST de Ollama installé localement.
 
-Il est nécessaire d'installer les dépendances mentionnées dans le fichier **requirements.txt* à la racine de ce projet. De plus, certaines applications ont leur propre **requirements.txt** qu'il convient de respecter aussi. La commande est la suivante :
+Il est nécessaire d'installer les dépendances mentionnées dans le fichier **requirements.txt** à la racine de ce projet. De plus, certaines applications ont leur propre **requirements.txt** qu'il convient de respecter aussi. La commande est la suivante :
 ```python
 pip install -r requirements.txt
 ```
