@@ -143,6 +143,8 @@ https://medium.com/@varsha.rainer/document-loaders-in-langchain-7c2db9851123
 
 https://blog.gopenai.com/creating-rag-app-with-llama2-and-chainlit-a-step-by-step-guide-d98499c2cd89
 
+https://blog.gopenai.com/building-a-rag-chatbot-using-llamaindex-groq-with-llama3-chainlit-b1709f770f55
+
 https://aws.amazon.com/fr/what-is/retrieval-augmented-generation/
 
 https://hackernoon.com/fr/un-tutoriel-sur-la-fa%C3%A7on-de-cr%C3%A9er-votre-propre-chiffon-et-de-l%27ex%C3%A9cuter-localement-langchain-ollama-streamlit
@@ -172,6 +174,8 @@ https://www.reddit.com/r/LangChain/comments/1ba77pu/difference_between_as_retrie
 ### Articles 
 
 https://towardsdatascience.com/openai-vs-open-source-multilingual-embedding-models-e5ccb7c90f05
+
+https://docs.llamaindex.ai/en/stable/examples/prompts/prompts_rag/ (pour gérer des prompts avec llama_index)
 
 https://www.pinecone.io/learn/openai-embeddings-v3/
 
