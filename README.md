@@ -1,7 +1,6 @@
-  <h3 align="center">Projet "Personnalisation de grands modèles de langage"</h3>
-  <p align="center">
-    Le but de ce projet est de découvrir les différentes manières de personnaliser un modèles de langage.
-    <br />
+<h3 align="center">Projet "Personnalisation de grands modèles de langage"</h3>
+<p align="center">Le but de ce projet est de découvrir les différentes manières de personnaliser un modèles de langage.</p>
+<br/>
 
 
 <!-- TABLE OF CONTENTS -->
@@ -115,5 +114,3 @@ Pour éviter cette erreur, il est généralement plus simple de supprimer le dos
 Elias Mouaheb - elias.mouaheb@uha.fr
 
 Théo Nicod - theo.nicod@uha.fr
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
