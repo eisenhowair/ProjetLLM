@@ -5,3 +5,4 @@ llama-index-embeddings-huggingface
 langchainhub #pour les prompts automatiques
 llama-index-llms-langchain
 llama-index-llms-fireworks
+ipython #pour afficher les prompts
