@@ -95,7 +95,7 @@ index.storage_context.persist(index_path)
 service_context = ServiceContext.from_defaults(
   embed_model=Settings.embed_model, llm=Settings.llm, callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]))
 ```
-Cettemanière de créer l'index est plus complexe que de faire quelque chose du type :
+Cette manière de créer l'index est plus complexe que de faire quelque chose du type :
 ```python
 vectorstore = FAISS.from_documents(
     documents=chunks, embedding=new_embeddings
