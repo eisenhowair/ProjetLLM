@@ -96,7 +96,7 @@ def recup_index(settings=None):
         return -1 # pas d'index existant lorsque lancement on_start
     query_engine = index.as_query_engine(
         streaming=True, similarity_top_k=4, service_context=service_context)
-    langchain_prompt = hub.pull("rlm/rag-prompt")
+    # langchain_prompt = hub.pull("rlm/rag-prompt")
 
     display_prompt_dict(query_engine.get_prompts())
     lc_prompt_tmpl = LangchainPromptTemplate(
