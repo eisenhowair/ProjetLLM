@@ -6,16 +6,6 @@ import requests
 import os
 from dotenv import load_dotenv
 
-"""
-la version gratuite de ngrok fait changer l'url de ngrok chaque jour
-donc pour l'utiliser il faut aller dans Settings -> Webhooks, et mettre à jour l'url
-avec celle apparaissant à l'écran en lancant ngrok http 5000
-sudo snap install ngrok
-ngrok config add-authtoken (avec le token ici) # pour se connecter (il faut se créer un compte pour en obtenir un)
-sudo ngrok http 5000
-dans un autre terminal, lancer ce programme
-
-"""
 app = Flask(__name__)
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path)
@@ -27,7 +17,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 llm_local = Ollama(base_url="http://localhost:11434", model="llama3:instruct")
 
-
+"""
 def get_pull_requests():
     print("dans get_pull_requests")
 
@@ -35,7 +25,7 @@ def get_pull_requests():
     headers = {'Authorization': f'token {GITHUB_TOKEN}'}
     response = requests.get(url, headers=headers)
     return response.json()
-
+"""
 
 def get_diff(pull_number):
     print("dans get_diff")
