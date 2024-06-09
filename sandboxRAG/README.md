@@ -50,6 +50,7 @@ Même comme ça, le téléchargement du premier pdf pose souvent problème, for�
 
 > [!IMPORTANT]
 > L'endroit où les pdfs sont téléchargés est indiqué dans la fonction *prepare_options()*. Le chemin étant absolu, il est impératif de le changer avant utilisation.
+>
 > Selon la version de chainlit utilisée, la ligne *allow_dangerous_deserialization=True,* peut créer une erreur. Si c'est le cas, la commenter ou l'enlever règlera le problème.
 
 ### Indexation
