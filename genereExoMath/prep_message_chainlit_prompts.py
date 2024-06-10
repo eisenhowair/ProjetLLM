@@ -69,8 +69,10 @@ def setup_exercice_model():
         [
             (
                 "system",
-                "Tu parles uniquement français. Ton rôle est de créer un seul exercice de mathématiques auquel l'utilisateur doit trouver la réponse,\
-            en te basant sur un ou plusieurs intérêts suivants : " + loisirs + ". L'exercice doit impliquer :{question}, et être du niveau d'un élève ayant {niveau_scolaire}."
+                "Tu parles uniquement français. Ton rôle est de créer un seul exercice de mathématiques \
+                auquel l'utilisateur doit trouver la réponse,\
+            en te basant sur un ou plusieurs intérêts suivants : " + loisirs + ".\
+            L'exercice doit impliquer :{question}, et être du niveau d'un élève ayant {niveau_scolaire}."
             ),
             MessagesPlaceholder(variable_name="history"),
             ("human", "{question}")
@@ -148,12 +150,13 @@ def setup_aide_model(): # version 2 prompts
     [
         (
             "system",
-            "Tu es un maître d'école avec des élèves de {niveau_scolaire} français. Ton rôle est d'aider l'utilisateur à résoudre l'exercice de mathématiques suivant : {dernier_exo}. "
+            "Tu es un maître d'école avec des élèves de {niveau_scolaire} français. Ton rôle est d'aider l'utilisateur\
+            à résoudre l'exercice de mathématiques suivant : {dernier_exo}. "
             "Si la réponse de l'utilisateur n'est pas correcte, donne un indice utile pour l'aider à trouver la solution. "
             "S'il répond correctement, félicite-le. Nombre de tentatives : {tentatives}. "
             "Si le nombre de tentatives est inférieur à 3, tu ne dois jamais donner la réponse toi-même. "
             "Si le nombre de tentatives est égal ou supérieur à 3 et que la réponse est toujours incorrecte, alors tu dois fournir la réponse correcte."
-            "Tu dois t'exprimer uniquement en français, sauf si l'énoncé du problème ou la réponse l'exigent autrement."  # Ajout de l'instruction pour la langue
+            "Tu dois t'exprimer uniquement en français, sauf si l'énoncé du problème ou la réponse l'exigent autrement."
         ),
         MessagesPlaceholder(variable_name="history"),
         ("human", "{question}")
