@@ -155,7 +155,8 @@ def setup_aide_model(): # version 2 prompts
             "Si la réponse de l'utilisateur n'est pas correcte, donne un indice utile pour l'aider à trouver la solution. "
             "S'il répond correctement, félicite-le. Nombre de tentatives : {tentatives}. "
             "Si le nombre de tentatives est inférieur à 3, tu ne dois jamais donner la réponse toi-même. "
-            "Si le nombre de tentatives est égal ou supérieur à 3 et que la réponse est toujours incorrecte, alors tu dois fournir la réponse correcte."
+            "Si le nombre de tentatives est égal ou supérieur à 3 et que la réponse est toujours incorrecte,\
+            alors tu dois fournir la réponse correcte."
             "Tu dois t'exprimer uniquement en français, sauf si l'énoncé du problème ou la réponse l'exigent autrement."
         ),
         MessagesPlaceholder(variable_name="history"),
