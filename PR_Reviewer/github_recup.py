@@ -155,7 +155,7 @@ embed_model = HuggingFaceEmbedding(
 llm = Ollama(base_url="http://localhost:11434",
              model="llama3:instruct", request_timeout=1000.0)
 #codegemma:7b-code
-d = 768
+d = 768 # dimensions du modèle d'embedding
 faiss_index = faiss.IndexFlatL2(d)
 
 Settings.llm = llm
