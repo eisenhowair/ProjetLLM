@@ -71,7 +71,7 @@ def load_index():
         embedding=embeddings,
         vectorstore_kwargs={
             "elasticsearch_url": "https://5d498084b1374d03923703344a873fdb.us-central1.gcp.cloud.es.io",
-            "elasticsearch_api_key": "l6n4LTZYTSm7BRv-W4VXxw",
+            "elasticsearch_api_key": "",
         },
     ).from_loaders([loader])
     return index
